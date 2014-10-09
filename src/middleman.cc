@@ -1,8 +1,9 @@
 #include "datastructure.h"
 #include <memory>
 #include <string.h>
+#include <stdio.h>
 
-const std::string kUsage = "./middleman --per_core_cost=<per_core_cost> --per_bit_transit_cost=<per_bit_transit_cost> --topology_file=<topology_file> --traffic_class_file=<traffic_class_file> --middlebox_spec_file=<middlebox_spec_file> --traffic_request_file=<traffic_request_file>";
+const std::string kUsage = "./middleman --per_core_cost=<per_core_cost>\n\t--per_bit_transit_cost=<per_bit_transit_cost>\n\t--topology_file=<topology_file>\n\t--traffic_class_file=<traffic_class_file>\n\t--middlebox_spec_file=<middlebox_spec_file>\n\t--traffic_request_file=<traffic_request_file>";
 
 std::vector<middlebox> middleboxes;
 std::vector<traffic_class> traffic_classes;

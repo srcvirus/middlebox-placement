@@ -2,8 +2,19 @@
 #define MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
 
 #include <string>
+#include <sstream>
 #include <vector>
 #include <math.h>
+#include <stdlib.h>
+
+/* namespace std {
+template<class T>
+std::string to_string(T value) {
+  std::stringstream str_stream;
+  str_stream << value;
+  return str_stream.str();
+}
+} */
 
 struct middlebox {
   std::string middlebox_name;
@@ -85,7 +96,7 @@ extern std::vector<middlebox> middleboxes;
 extern std::vector<traffic_class> traffic_classes;
 extern std::vector<traffic_request> traffic_requests;
 extern std::vector<node> nodes;
-extern std::vector<std::vector<edge_endpoint>> graph;
+extern std::vector<std::vector<edge_endpoint> > graph;
 extern double per_core_cost, per_bit_transit_cost;
 
 #endif // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
