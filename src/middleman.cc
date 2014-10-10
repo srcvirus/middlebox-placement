@@ -1,7 +1,10 @@
 #include "datastructure.h"
+#include <map>
+#include <utility>
 #include <memory>
-#include <string.h>
 #include <stdio.h>
+#include <string>
+#include <string.h>
 
 const std::string kUsage = "./middleman --per_core_cost=<per_core_cost>\n\t--per_bit_transit_cost=<per_bit_transit_cost>\n\t--topology_file=<topology_file>\n\t--traffic_class_file=<traffic_class_file>\n\t--middlebox_spec_file=<middlebox_spec_file>\n\t--traffic_request_file=<traffic_request_file>";
 
@@ -11,6 +14,21 @@ std::vector<traffic_request> traffic_requests;
 std::vector<node> nodes;
 std::vector<std::vector<edge_endpoint> > graph;
 double per_core_cost, per_bit_transit_cost;
+
+std::unique_ptr<std::map<std::string,std::string>> ParseArgs(
+  int argc, char* argv[]) {
+  std::unique_ptr<std::map<std::string,std::string>> arg_map(
+      new std::map<std::string,std::string>());
+  for (int i = 1; i < argc; ++i) {
+    char* key = strtok(argv[i], "=");
+    char* value = strtok(NULL, "=");
+#ifdef DEBUG
+    printf(" [%s] => [%s]\n", key, value);
+#endif
+    arg_map->insert(std::make_pair(key, value));
+  }
+  return std::move(arg_map);
+}
 
 inline int GetMiddleboxIndex(const std::string &middlebox_name) {
   for (int i = 0; i < middleboxes.size(); ++i) {
@@ -30,12 +48,16 @@ inline int GetTrafficClassIndex(const std::string &traffic_class_name) {
 
 std::unique_ptr<std::vector<std::vector<std::string> > >
 ReadCSVFile(const char *filename) {
+#ifdef DEBUG
+  printf("[Parsing %s]\n", filename);
+#endif
   FILE *file_ptr = fopen(filename, "r");
   const static int kBufferSize = 1024;
   char line_buffer[kBufferSize];
   std::unique_ptr<std::vector<std::vector<std::string> > > ret_vector(
       new std::vector<std::vector<std::string> >());
   std::vector<std::string> current_line;
+  int row_number = 0;
   while (fgets(line_buffer, kBufferSize, file_ptr)) {
     current_line.clear();
     char *token = strtok(line_buffer, ",");
@@ -43,9 +65,15 @@ ReadCSVFile(const char *filename) {
     while ((token = strtok(NULL, ","))) {
       current_line.push_back(token);
     }
+#ifdef DEBUG
+    for (std::string t : current_line) printf(" %s", t.c_str());
+#endif
+    ret_vector->push_back(current_line);
   }
-  ret_vector->push_back(current_line);
   fclose(file_ptr);
+#ifdef DEBUG
+  printf("Parsed %d lines\n", static_cast<int>(ret_vector->size()));
+#endif
   return std::move(ret_vector);
 }
 
@@ -59,7 +87,8 @@ void InitializeTrafficClasses(const char *filename) {
 }
 
 void PrintTrafficClasses() {
-  puts("[Traffic Classes]");
+  printf("[Traffic Classes (count = %d)]\n",
+          static_cast<int>(traffic_classes.size()));
   for (int i = 0; i < traffic_classes.size(); ++i) {
     printf("[i = %d] %s\n", i, traffic_classes[i].GetDebugString().c_str());
   }
@@ -74,8 +103,8 @@ void InitializeMiddleboxes(const char *filename) {
   }
 }
 
-void PrintMiddleBoxes() {
-  puts("[Middleboxes]");
+void PrintMiddleboxes() {
+  printf("[Middleboxes (count = %d)]\n", static_cast<int>(middleboxes.size()));
   for (int i = 0; i < middleboxes.size(); ++i) {
     printf("[i = %d] %s\n", i, middleboxes[i].GetDebugString().c_str());
   }
@@ -100,16 +129,23 @@ void InitializeTrafficRequests(const char *filename) {
 }
 
 void PrintTrafficRequests() {
-  puts("[Traffic Requests]");
+  printf("[Traffic Requests (count = %d)\n",
+         static_cast<int>(traffic_requests.size()));
   for (int i = 0; i < traffic_requests.size(); ++i) {
     printf("[i = %d] %s\n", i, traffic_requests[i].GetDebugString().c_str());
   }
 }
 
 void InitializeTopology(const char* filename) {
+#ifdef DEBUG
+  printf("[Parsing %s]\n", filename);
+#endif
   FILE* file_ptr = fopen(filename, "r");
   int node_count, edge_count;
   fscanf(file_ptr, "%d %d", &node_count, &edge_count);
+#ifdef DEBUG
+  printf("node_count = %d, edge_count = %d\n", node_count, edge_count);
+#endif
   graph.resize(node_count);
   nodes.resize(node_count);
   for (int i = 0; i < node_count; ++i) {
@@ -119,6 +155,12 @@ void InitializeTopology(const char* filename) {
   for (int j = 0; j < edge_count; ++j) {
     int source, destination, bandwidth, delay;
     fscanf(file_ptr, "%d %d %d %d", &source, &destination, &bandwidth, &delay);
+#ifdef DEBUG
+    printf("Adding edge, %d --> %s\n", source,
+           nodes[destination].GetDebugString().c_str());
+    printf("Adding edge, %d --> %s\n", destination,
+           nodes[source].GetDebugString().c_str());
+#endif
     graph[source].emplace_back(&nodes[destination], bandwidth, delay);
     graph[destination].emplace_back(&nodes[source], bandwidth, delay);
   }
@@ -128,6 +170,30 @@ int main(int argc, char* argv[]) {
   if (argc < 7) {
     puts(kUsage.c_str());
     return 1;
+  }
+  auto arg_maps = ParseArgs(argc, argv);
+  for (auto argument : *arg_maps) {
+    if (argument.first == "--per_core_cost") {
+      per_core_cost = atof(argument.second.c_str());
+    }
+    else if (argument.first == "--per_bit_transit_cost") {
+      per_bit_transit_cost = atof(argument.second.c_str());
+    }
+    else if (argument.first == "--topology_file") {
+      InitializeTopology(argument.second.c_str());
+    }
+    else if (argument.first == "--traffic_class_file") {
+      InitializeTrafficClasses(argument.second.c_str());
+      PrintTrafficClasses();
+    }
+    else if (argument.first == "--middlebox_spec_file") {
+      InitializeMiddleboxes(argument.second.c_str());
+      PrintMiddleboxes();
+    }
+    else if (argument.first == "--traffic_request_file") {
+      InitializeTrafficRequests(argument.second.c_str());
+      PrintTrafficRequests();
+    }
   }
   return 0;
 }

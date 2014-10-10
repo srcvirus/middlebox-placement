@@ -80,6 +80,10 @@ struct traffic_request {
 struct node {
   int node_id;
   int num_cores;
+  std::string GetDebugString() {
+    return "node_id : " + std::to_string(node_id) +
+           ", num_cores : " + std::to_string(num_cores);
+  }
 };
 
 struct edge_endpoint {
