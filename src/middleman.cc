@@ -144,7 +144,7 @@ void InitializeTopology(const char* filename) {
   int node_count, edge_count;
   fscanf(file_ptr, "%d %d", &node_count, &edge_count);
 #ifdef DEBUG
-  printf("node_count = %d, edge_count = %d\n", node_count, edge_count);
+  printf(" node_count = %d, edge_count = %d\n", node_count, edge_count);
 #endif
   graph.resize(node_count);
   nodes.resize(node_count);
@@ -156,9 +156,9 @@ void InitializeTopology(const char* filename) {
     int source, destination, bandwidth, delay;
     fscanf(file_ptr, "%d %d %d %d", &source, &destination, &bandwidth, &delay);
 #ifdef DEBUG
-    printf("Adding edge, %d --> %s\n", source,
+    printf(" Adding edge, %d --> %s\n", source,
            nodes[destination].GetDebugString().c_str());
-    printf("Adding edge, %d --> %s\n", destination,
+    printf(" Adding edge, %d --> %s\n", destination,
            nodes[source].GetDebugString().c_str());
 #endif
     graph[source].emplace_back(&nodes[destination], bandwidth, delay);
