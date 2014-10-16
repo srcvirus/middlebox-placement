@@ -150,8 +150,14 @@ void InitializeTopology(const char* filename) {
   nodes.resize(node_count);
   for (int i = 0; i < node_count; ++i) {
     fscanf(file_ptr,"%d %d", &nodes[i].node_id, &nodes[i].num_cores);
+    nodes[i].residual_cores = node[i].num_cores;
     graph[i].clear();
+    shortest_path[i][i] = 0.0;
+    for (int j = i + 1; j < node_count; j++) {
+      shortest_path[i][j] = shortest_path[j][i] = INF;
+    }
   }
+
   for (int j = 0; j < edge_count; ++j) {
     int source, destination, bandwidth, delay;
     fscanf(file_ptr, "%d %d %d %d", &source, &destination, &bandwidth, &delay);
@@ -163,7 +169,139 @@ void InitializeTopology(const char* filename) {
 #endif
     graph[source].emplace_back(&nodes[destination], bandwidth, delay);
     graph[destination].emplace_back(&nodes[source], bandwidth, delay);
+    shortest_path[source][destination] = shortest_path[destination][source] =
+      delay;
   }
+  for (int k = 0; k < node_count; ++k) {
+    for (int i = 0; i < node_count; ++i) {
+      for (int j = 0; j < node_count; ++j) {
+        shortest_path[i][j] = std::min(
+                                shortest_path[i][j],
+                                shortest_path[i][k] + shortest_path[k][j]);
+      }
+    }
+  }
+}
+
+int IsResourceAvailable(const resource& resource_vector, int candidate,
+                        const middlebox& m_box) {
+  if (resource_vector.cpu_cores[candidate] >= m_box.cpu_requirement)
+    return 1;
+  return 0;
+}
+
+inline double GetSLAViolationCost(int prev_node, int current_node,
+                           const traffic_request& t_request) {
+  const int kNumSegments = t_request.middlebox_sequence.size() + 1;
+  const double kPerSegmentLatencyBound = 
+    (1.0 * traffic_classes[t_request.sla_specification].max_delay) /
+    kNumSegments;
+  if (shortest_path[prev_node][current_node] > kPerSegmentLatencyBound)
+    return (shortest_path[prev_node][current_node] - kPerSegmentLatencyBound) *
+             traffic_classes[t_request.sla_specification].delay_penalty;
+  return 0.0;
+}
+
+inline double GetTransitCost(int prev_node, int current_node) {
+  return 1.0 * shortest_path[prev_node][current_node] * per_bit_transit_cost;
+}
+
+inline double GetEnergyCost(const middlebox& m_box) {
+  return per_core_cost * m_box.cpu_requirement;
+}
+                           
+double GetCost(int prev_node, int current_node,
+               const middlebox& m_box,
+               const traffic_request& t_request) {
+  double deployment_cost = m_box.deployment_cost;
+  double energy_cost = GetEnergyCost(m_box);
+  double transit_cost = GetTransitCost(prev_node, current_node);
+  double sla_violation_cost = GetSLAViolationCost(prev_node, current_node,
+                                                  t_request);
+  return deployment_cost + energy_cost + transit_cost + sla_violation_cost;
+}
+
+void ViterbiInit() {
+  for (int i = 0; i < MAXN; ++i) {
+    for (int j = 0; j < MAXN; ++j) {
+      cost[i][j] = INF;
+      pre[i][j] = NIL;
+    }
+  }
+}
+
+std::unique_ptr<std::vector<int> > ViterbiCompute(const traffic_request& t_request) {
+  ViterbiInit();
+  int stage = 0, node = NIL;
+  const static int kNumNodes = graph.size();
+  const int kNumStages = t_request.middlebox_sequence.size();
+  std::vector<resource> current_vector, previous_vector;
+  current_vector.resize(kNumNodes);
+  previous_vector.resize(kNumNodes);
+
+  for (int i = 0; i < kNumNodes; ++i) {
+    for (int j = 0; j < kNumNodes; ++j) {
+      current_vector[i].cpu_cores.push_back(nodes[j].residual_cores);
+    }
+  }
+  for (node = 0; node < kNumNodes; ++node) {
+    if (IsResourceAvailable(current_vector, node,
+                            t_request.middlebox_sequence[0])) {
+      cost[stage][node] = GetCost(t_request.source, node,
+        t_request.middlebox_sequence[0], t_request);
+      current_vector[node].cpu_cores[node] -=
+        t_request.middlebox_sequence[0].cpu_requirement;
+    }
+  }
+  // TODO(shihab): Handle repeated middleboxes.
+  for (stage = 1; stage < kNumStages; ++stage) {
+    previous_vector = current_vector;
+    for (int current_node = 0; current_node < kNumNodes; ++current_node) {
+      int min_index = NIL;
+      for (int prev_node = 0; prev_node < kNumNodes; ++prev_node) {
+        if (IsResourceAvailable(previous_vector[prev_node], current_node,
+                                t_request.middlebox_sequence[stage])) {
+          double transition_cost = cost[stage - 1][prev_node] +
+                                   GetCost(prev_node, current_node,
+                                           t_request.middlebox_sequence[stage],
+                                           t_request);
+          if (cost[stage][current_node] > transition_cost) {
+            cost[stage][current_node] = transition_cost;
+            pre[stage][current_node] = prev_node;
+            min_index = prev_node;
+          }
+        }
+      }
+      current_vector[current_node].cpu_cores =
+        previous_vector[min_index].cpu_cores;
+      current_vector[current_node].cpu_cores[current_node] -=
+        t_request.middlebox_sequence[stage].cpu_requirement;
+    }
+  }
+  double min_cost = INF;
+  double min_index = NIL;
+  for (node = 0; node < kNumNodes; ++node) {
+    double transition_cost = cost[kNumStages - 1][node] + 
+                             GetTransportCost(node, t_request.destination) +
+                             GetSLAViolationCost(node, t_request.destination,
+                                                 t_request);
+    if (min_cost > transit_cost) {
+      min_cost = transit_cost;
+      min_index = node;
+    }
+  }
+  std::unique_ptr<vector<int> > return_vector(new vector<int>());
+  return_vector->resize(kNumStages);
+  int current_node = min_index;
+  for (stage = kNumStages - 1; stage >= 0; --stage) {
+    return_vector->push_back(current_node);
+    current_node = pre[stage][current_node];
+  }
+  std::reverse(return_vector->begin(), return_vector->end());
+  return std::move(return_vector);
+}
+
+void ViterbiPrintSolution() {
 }
 
 int main(int argc, char* argv[]) {

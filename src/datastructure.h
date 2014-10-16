@@ -7,14 +7,9 @@
 #include <math.h>
 #include <stdlib.h>
 
-/* namespace std {
-template<class T>
-std::string to_string(T value) {
-  std::stringstream str_stream;
-  str_stream << value;
-  return str_stream.str();
-}
-} */
+#define INF 9999999
+#define MAXN 1000
+#define NIL -1
 
 struct middlebox {
   std::string middlebox_name;
@@ -80,6 +75,7 @@ struct traffic_request {
 struct node {
   int node_id;
   int num_cores;
+  int residual_cores;
   std::string GetDebugString() {
     return "node_id : " + std::to_string(node_id) +
            ", num_cores : " + std::to_string(num_cores);
@@ -95,6 +91,10 @@ struct edge_endpoint {
       : u(u_ptr), bandwidth(bw), delay(del), residual_bandwidth(bw) {}
 };
 
+struct resource {
+  std::vector<int> cpu_cores;
+};
+
 // Global data structures;
 extern std::vector<middlebox> middleboxes;
 extern std::vector<traffic_class> traffic_classes;
@@ -102,5 +102,7 @@ extern std::vector<traffic_request> traffic_requests;
 extern std::vector<node> nodes;
 extern std::vector<std::vector<edge_endpoint> > graph;
 extern double per_core_cost, per_bit_transit_cost;
-
+extern double cost[MAXN][MAXN];
+extern int pre[MAXN][MAXN];
+extern int shortest_path[MAX][MAXN];
 #endif // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
