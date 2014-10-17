@@ -1,4 +1,8 @@
 #include "datastructure.h"
+#include "util.h"
+
+#include <algorithm>
+#include <assert.h>
 #include <map>
 #include <utility>
 #include <memory>
@@ -19,6 +23,10 @@ std::vector<traffic_request> traffic_requests;
 std::vector<node> nodes;
 std::vector<std::vector<edge_endpoint> > graph;
 double per_core_cost, per_bit_transit_cost;
+double cost[MAXN][MAXN];
+int pre[MAXN][MAXN];
+int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
+std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
 
 std::unique_ptr<std::map<std::string, std::string> > ParseArgs(int argc,
                                                                char *argv[]) {
@@ -27,19 +35,22 @@ std::unique_ptr<std::map<std::string, std::string> > ParseArgs(int argc,
   for (int i = 1; i < argc; ++i) {
     char *key = strtok(argv[i], "=");
     char *value = strtok(NULL, "=");
-#ifdef DEBUG
-    printf(" [%s] => [%s]\n", key, value);
-#endif
+    DEBUG(" [%s] => [%s]\n", key, value);
     arg_map->insert(std::make_pair(key, value));
   }
   return std::move(arg_map);
 }
 
 inline int GetMiddleboxIndex(const std::string &middlebox_name) {
+  DEBUG("Finding middlebox: %s\n", middlebox_name.c_str());
   for (int i = 0; i < middleboxes.size(); ++i) {
-    if (middleboxes[i].middlebox_name == middlebox_name)
+    DEBUG("i = %d, name = %s\n", i, middleboxes[i].middlebox_name.c_str());
+    if (middleboxes[i].middlebox_name == middlebox_name) {
+      DEBUG("Middlebox %s found at %d\n", middlebox_name.c_str(), i);
       return i;
+    }
   }
+  DEBUG("Middlebox %s not found :(\n", middlebox_name.c_str());
   return -1; // Not found.
 }
 
@@ -53,9 +64,7 @@ inline int GetTrafficClassIndex(const std::string &traffic_class_name) {
 
 std::unique_ptr<std::vector<std::vector<std::string> > >
 ReadCSVFile(const char *filename) {
-#ifdef DEBUG
-  printf("[Parsing %s]\n", filename);
-#endif
+  DEBUG("[Parsing %s]\n", filename);
   FILE *file_ptr = fopen(filename, "r");
   const static int kBufferSize = 1024;
   char line_buffer[kBufferSize];
@@ -65,21 +74,15 @@ ReadCSVFile(const char *filename) {
   int row_number = 0;
   while (fgets(line_buffer, kBufferSize, file_ptr)) {
     current_line.clear();
-    char *token = strtok(line_buffer, ",");
+    char *token = strtok(line_buffer, ",\n");
     current_line.push_back(token);
-    while ((token = strtok(NULL, ","))) {
+    while ((token = strtok(NULL, ",\n"))) {
       current_line.push_back(token);
     }
-#ifdef DEBUG
-    for (std::string t : current_line)
-      printf(" %s", t.c_str());
-#endif
     ret_vector->push_back(current_line);
   }
   fclose(file_ptr);
-#ifdef DEBUG
-  printf("Parsed %d lines\n", static_cast<int>(ret_vector->size()));
-#endif
+  DEBUG("Parsed %d lines\n", static_cast<int>(ret_vector->size()));
   return std::move(ret_vector);
 }
 
@@ -143,54 +146,145 @@ void PrintTrafficRequests() {
 }
 
 void InitializeTopology(const char *filename) {
-#ifdef DEBUG
-  printf("[Parsing %s]\n", filename);
-#endif
+  DEBUG("[Parsing %s]\n", filename);
   FILE *file_ptr = fopen(filename, "r");
   int node_count, edge_count;
   fscanf(file_ptr, "%d %d", &node_count, &edge_count);
-#ifdef DEBUG
-  printf(" node_count = %d, edge_count = %d\n", node_count, edge_count);
-#endif
+  DEBUG(" node_count = %d, edge_count = %d\n", node_count, edge_count);
   graph.resize(node_count);
   nodes.resize(node_count);
   for (int i = 0; i < node_count; ++i) {
     fscanf(file_ptr, "%d %d", &nodes[i].node_id, &nodes[i].num_cores);
-    nodes[i].residual_cores = node[i].num_cores;
+    nodes[i].residual_cores = nodes[i].num_cores;
     graph[i].clear();
     shortest_path[i][i] = 0.0;
+    sp_pre[i][i] = NIL;
     for (int j = i + 1; j < node_count; j++) {
       shortest_path[i][j] = shortest_path[j][i] = INF;
+      sp_pre[i][j] = sp_pre[j][i] = NIL;
     }
   }
 
   for (int j = 0; j < edge_count; ++j) {
     int source, destination, bandwidth, delay;
     fscanf(file_ptr, "%d %d %d %d", &source, &destination, &bandwidth, &delay);
-#ifdef DEBUG
-    printf(" Adding edge, %d --> %s\n", source,
-           nodes[destination].GetDebugString().c_str());
-    printf(" Adding edge, %d --> %s\n", destination,
-           nodes[source].GetDebugString().c_str());
-#endif
+    DEBUG(" Adding edge, %d --> %s\n", source,
+          nodes[destination].GetDebugString().c_str());
+    DEBUG(" Adding edge, %d --> %s\n", destination,
+          nodes[source].GetDebugString().c_str());
     graph[source].emplace_back(&nodes[destination], bandwidth, delay);
     graph[destination].emplace_back(&nodes[source], bandwidth, delay);
     shortest_path[source][destination] = shortest_path[destination][source] =
         delay;
+    sp_pre[source][destination] = source;
+    sp_pre[destination][source] = destination;
   }
   for (int k = 0; k < node_count; ++k) {
     for (int i = 0; i < node_count; ++i) {
       for (int j = 0; j < node_count; ++j) {
-        shortest_path[i][j] = std::min(
-            shortest_path[i][j], shortest_path[i][k] + shortest_path[k][j]);
+        if (i == j)
+          continue;
+        int relaxed_cost = shortest_path[i][k] + shortest_path[k][j];
+        if (shortest_path[i][j] > relaxed_cost) {
+          shortest_path[i][j] = relaxed_cost;
+          sp_pre[i][j] = sp_pre[k][j];
+        }
       }
     }
   }
 }
 
-int IsResourceAvailable(const resource &resource_vector, int candidate,
-                        const middlebox &m_box) {
-  if (resource_vector.cpu_cores[candidate] >= m_box.cpu_requirement)
+inline std::unique_ptr<std::vector<int> > ComputeShortestPath(int source,
+                                                              int destination) {
+  std::unique_ptr<std::vector<int> > path(new std::vector<int>());
+  while (destination != NIL) {
+    path->push_back(destination);
+    destination = sp_pre[source][destination];
+  }
+  std::reverse(path->begin(), path->end());
+  return std::move(path);
+}
+
+inline int GetLatency(int source, int destination) {
+  for (edge_endpoint endpoint : graph[source]) {
+    if (endpoint.u->node_id == destination)
+      return endpoint.delay;
+  }
+  return NIL;
+}
+
+inline int GetEdgeResidualBandwidth(int source, int destination) {
+  for (auto &endpoint : graph[source]) {
+    if (endpoint.u->node_id == destination)
+      return endpoint.residual_bandwidth;
+  }
+  return NIL;
+}
+
+inline int GetPathResidualBandwidth(int source, int destination) {
+  std::vector<int> *path_ptr = nullptr;
+  std::pair<int, int> cache_index(source, destination);
+  if (path_cache[cache_index]) {
+    path_ptr = path_cache[cache_index].get();
+  } else {
+    auto path = ComputeShortestPath(source, destination);
+    path_cache[cache_index] = std::move(path);
+    path_ptr = path_cache[cache_index].get();
+  }
+  int residual_bandwidth = INF;
+  for (int i = 0; i < static_cast<int>(path_ptr->size()) - 1; ++i) {
+    DEBUG("edge[%d][%d] = %d\n", path_ptr->at(i), path_ptr->at(i + 1),
+          GetEdgeResidualBandwidth(path_ptr->at(i), path_ptr->at(i + 1)));
+    residual_bandwidth = std::min(
+        residual_bandwidth,
+        GetEdgeResidualBandwidth(path_ptr->at(i), path_ptr->at(i + 1)));
+  }
+  return residual_bandwidth;
+}
+
+inline void ReduceEdgeResidualBandwidth(int source, int destination,
+                                        int bandwidth) {
+  for (auto &endpoint : graph[source]) {
+    if (endpoint.u->node_id == destination)
+      endpoint.residual_bandwidth -= bandwidth;
+  }
+}
+
+inline void ReducePathResidualBandwidth(int source, int destination,
+                                        int bandwidth) {
+  std::pair<int, int> cache_index(source, destination);
+  std::vector<int> *path_ptr = nullptr;
+  if (path_cache[cache_index]) {
+    path_ptr = path_cache[cache_index].get();
+  } else {
+    auto path = ComputeShortestPath(source, destination);
+    path_cache[cache_index] = std::move(path);
+    path_ptr = path_cache[cache_index].get();
+  }
+  for (int i = 0; i < static_cast<int>(path_ptr->size()) - 1; ++i) {
+    ReduceEdgeResidualBandwidth(path_ptr->at(i), path_ptr->at(i + 1),
+                                bandwidth);
+  }
+}
+
+inline void ReduceNodeCapacity(int node, const middlebox &m_box) {
+  nodes[node].residual_cores -= m_box.cpu_requirement;
+}
+
+inline int IsResourceAvailable(int prev_node, int current_node,
+                               const resource &resource_vector,
+                               const middlebox &m_box,
+                               const traffic_request &t_request) {
+  const traffic_class &t_class = traffic_classes[t_request.sla_specification];
+  DEBUG(
+      "[IsResourceAvailable(%d, %d)] res_bw = %d, req_bw = %d, res_cores = %d,"
+      "req_cores = %d\n",
+      prev_node, current_node,
+      GetPathResidualBandwidth(prev_node, current_node), t_class.min_bandwidth,
+      resource_vector.cpu_cores[current_node], m_box.cpu_requirement);
+  if ((GetPathResidualBandwidth(prev_node, current_node) >=
+       t_class.min_bandwidth) &&
+      (resource_vector.cpu_cores[current_node] >= m_box.cpu_requirement))
     return 1;
   return 0;
 }
@@ -198,12 +292,12 @@ int IsResourceAvailable(const resource &resource_vector, int candidate,
 inline double GetSLAViolationCost(int prev_node, int current_node,
                                   const traffic_request &t_request) {
   const int kNumSegments = t_request.middlebox_sequence.size() + 1;
+  const traffic_class &t_class = traffic_classes[t_request.sla_specification];
   const double kPerSegmentLatencyBound =
-      (1.0 * traffic_classes[t_request.sla_specification].max_delay) /
-      kNumSegments;
+      (1.0 * t_class.max_delay) / kNumSegments;
   if (shortest_path[prev_node][current_node] > kPerSegmentLatencyBound)
     return (shortest_path[prev_node][current_node] - kPerSegmentLatencyBound) *
-           traffic_classes[t_request.sla_specification].delay_penalty;
+           t_class.delay_penalty;
   return 0.0;
 }
 
@@ -222,6 +316,9 @@ double GetCost(int prev_node, int current_node, const middlebox &m_box,
   double transit_cost = GetTransitCost(prev_node, current_node);
   double sla_violation_cost =
       GetSLAViolationCost(prev_node, current_node, t_request);
+  DEBUG("dep_cost = %lf, en_cost = %lf, tr_cost = %lf,"
+        "sla_cost = %lf\n",
+        deployment_cost, energy_cost, transit_cost, sla_violation_cost);
   return deployment_cost + energy_cost + transit_cost + sla_violation_cost;
 }
 
@@ -250,26 +347,32 @@ ViterbiCompute(const traffic_request &t_request) {
     }
   }
   for (node = 0; node < kNumNodes; ++node) {
-    if (IsResourceAvailable(current_vector, node,
-                            t_request.middlebox_sequence[0])) {
-      cost[stage][node] = GetCost(t_request.source, node,
-                                  t_request.middlebox_sequence[0], t_request);
-      current_vector[node].cpu_cores[node] -=
-          t_request.middlebox_sequence[0].cpu_requirement;
+    const middlebox &m_box = middleboxes[t_request.middlebox_sequence[0]];
+    if (IsResourceAvailable(t_request.source, node, current_vector[node], m_box,
+                            t_request)) {
+      cost[stage][node] = GetCost(t_request.source, node, m_box, t_request);
+      current_vector[node].cpu_cores[node] -= m_box.cpu_requirement;
+      DEBUG("[First stage] cost[stage][node] = %lf\n", cost[stage][node]);
     }
   }
   // TODO(shihab): Handle repeated middleboxes.
   for (stage = 1; stage < kNumStages; ++stage) {
+    const middlebox &m_box = middleboxes[t_request.middlebox_sequence[stage]];
     previous_vector = current_vector;
+    DEBUG("[stage = %d] Placing middlebox = %s\n", stage,
+          m_box.middlebox_name.c_str());
     for (int current_node = 0; current_node < kNumNodes; ++current_node) {
       int min_index = NIL;
       for (int prev_node = 0; prev_node < kNumNodes; ++prev_node) {
-        if (IsResourceAvailable(previous_vector[prev_node], current_node,
-                                t_request.middlebox_sequence[stage])) {
+        if (IsResourceAvailable(prev_node, current_node,
+                                previous_vector[prev_node], m_box, t_request)) {
           double transition_cost =
               cost[stage - 1][prev_node] +
-              GetCost(prev_node, current_node,
-                      t_request.middlebox_sequence[stage], t_request);
+              GetCost(prev_node, current_node, m_box, t_request);
+          DEBUG("[stage = %d, middlebox = %s, prev_node = %d, tr_cost = "
+                "%lf]\n",
+                stage, m_box.middlebox_name.c_str(), prev_node,
+                transition_cost);
           if (cost[stage][current_node] > transition_cost) {
             cost[stage][current_node] = transition_cost;
             pre[stage][current_node] = prev_node;
@@ -277,36 +380,58 @@ ViterbiCompute(const traffic_request &t_request) {
           }
         }
       }
-      current_vector[current_node].cpu_cores =
-          previous_vector[min_index].cpu_cores;
-      current_vector[current_node].cpu_cores[current_node] -=
-          t_request.middlebox_sequence[stage].cpu_requirement;
+      DEBUG("[stage = %d, min_index = %d]\n", stage, min_index);
+      if (min_index != NIL) {
+        DEBUG("Current node = %d, min_index = %d\n", current_node, min_index);
+        current_vector[current_node].cpu_cores =
+            previous_vector[min_index].cpu_cores;
+        current_vector[current_node].cpu_cores[current_node] -=
+            m_box.cpu_requirement;
+      } else {
+        current_vector[current_node].cpu_cores.clear();
+      }
     }
   }
   double min_cost = INF;
-  double min_index = NIL;
-  for (node = 0; node < kNumNodes; ++node) {
+  int min_index = NIL;
+  DEBUG("kNumNodes = %d\n", kNumNodes);
+  for (int cur_node = 0; cur_node < kNumNodes; ++cur_node) {
     double transition_cost =
-        cost[kNumStages - 1][node] +
-        GetTransportCost(node, t_request.destination) +
-        GetSLAViolationCost(node, t_request.destination, t_request);
-    if (min_cost > transit_cost) {
-      min_cost = transit_cost;
-      min_index = node;
+        cost[kNumStages - 1][cur_node] +
+        GetTransitCost(cur_node, t_request.destination) +
+        GetSLAViolationCost(cur_node, t_request.destination, t_request);
+    if (min_cost > transition_cost) {
+      min_cost = transition_cost;
+      min_index = cur_node;
     }
   }
-  std::unique_ptr<vector<int> > return_vector(new vector<int>());
-  return_vector->resize(kNumStages);
+
+  std::unique_ptr<std::vector<int> > return_vector(new std::vector<int>());
   int current_node = min_index;
   for (stage = kNumStages - 1; stage >= 0; --stage) {
     return_vector->push_back(current_node);
     current_node = pre[stage][current_node];
   }
+  DEBUG("Computed vector size = %d\n", return_vector->size());
+  return_vector->push_back(t_request.source);
   std::reverse(return_vector->begin(), return_vector->end());
+  return_vector->push_back(t_request.destination);
   return std::move(return_vector);
 }
 
-void ViterbiPrintSolution() {}
+void UpdateResources(std::vector<int> *traffic_sequence,
+                     const traffic_request &t_request) {
+  const traffic_class t_class = traffic_classes[t_request.sla_specification];
+  for (int i = 0; i < static_cast<int>(traffic_sequence->size()) - 1; ++i) {
+    ReducePathResidualBandwidth(traffic_sequence->at(i),
+                                traffic_sequence->at(i + 1),
+                                t_class.min_bandwidth);
+  }
+  for (int i = 0; i < t_request.middlebox_sequence.size(); ++i) {
+    const middlebox &m_box = middleboxes[t_request.middlebox_sequence[i]];
+    ReduceNodeCapacity(traffic_sequence->at(i + 1), m_box);
+  }
+}
 
 int main(int argc, char *argv[]) {
   if (argc < 7) {
@@ -331,6 +456,16 @@ int main(int argc, char *argv[]) {
       InitializeTrafficRequests(argument.second.c_str());
       PrintTrafficRequests();
     }
+  }
+
+  for (int i = 0; i < traffic_requests.size(); ++i) {
+    std::unique_ptr<std::vector<int> > result =
+        ViterbiCompute(traffic_requests[i]);
+    UpdateResources(result.get(), traffic_requests[i]);
+    for (int j = 0; j < result->size(); ++j) {
+      printf(" %d", result->at(j));
+    }
+    printf("\n");
   }
   return 0;
 }

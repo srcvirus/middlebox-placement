@@ -5,6 +5,8 @@
 #include <sstream>
 #include <vector>
 #include <math.h>
+#include <map>
+#include <memory>
 #include <stdlib.h>
 
 #define INF 9999999
@@ -63,11 +65,17 @@ struct traffic_request {
         sla_specification(tr_sla_specification),
         middlebox_sequence(tr_mbox_seq) {}
   std::string GetDebugString() {
+    std::string seq_string;
+    for (auto value : middlebox_sequence) {
+      seq_string += std::to_string(value) + " ";
+    }
     return "source : " + std::to_string(source) + ", destination : " +
            std::to_string(destination) + ", sla_specification : " +
            std::to_string(sla_specification) +
            ", middlebox_sequence_length : " +
-           std::to_string(middlebox_sequence.size());
+           std::to_string(middlebox_sequence.size()) +
+           ", middlebox_sequence: " +
+           seq_string;
   }
 };
 
@@ -100,8 +108,10 @@ extern std::vector<traffic_class> traffic_classes;
 extern std::vector<traffic_request> traffic_requests;
 extern std::vector<node> nodes;
 extern std::vector<std::vector<edge_endpoint> > graph;
+extern std::map<std::pair<int,int>, 
+                std::unique_ptr<std::vector<int> > >  path_cache;
 extern double per_core_cost, per_bit_transit_cost;
 extern double cost[MAXN][MAXN];
 extern int pre[MAXN][MAXN];
-extern int shortest_path[MAX][MAXN];
+extern int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 #endif // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
