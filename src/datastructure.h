@@ -145,6 +145,19 @@ struct solution_statistics {
   std::vector<traffic_statistics> t_stats;
 };
 
+inline int GetNodeCount(const std::vector<std::vector<edge_endpoint> >& g) {
+  return g.size();
+}
+
+inline int GetEdgeCount(const std::vector<std::vector<edge_endpoint> >& g) {
+  int edge_count = 0;
+  for (int i = 0; i < g.size(); ++i) {
+    edge_count += g[i].size();
+  }
+  edge_count /= 2;
+  return edge_count;
+}
+
 // Global data structures;
 extern std::vector<middlebox> middleboxes;
 extern std::vector<traffic_class> traffic_classes;
