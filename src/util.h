@@ -4,7 +4,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string>
+#include <time.h>
 
+#define ONE_GIG 1000000000ULL
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define AT __FILE__ ":" TOSTRING(__LINE__) " "
@@ -24,4 +26,12 @@ void PrintDebugMessage(const char* location, const char* fmt_string, ...) {
   fflush(stdout);
   va_end(args);
 }
+
+inline unsigned long long CurrentTimeNanos() {
+  timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return static_cast<unsigned long long>(ts.tv_sec) + 
+           static_cast<unsigned long long>(ts.tv_nsec);
+}
+
 #endif  // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
