@@ -9,7 +9,7 @@ set border 3 back linestyle 80
 set xtics nomirror
 set ytics nomirror
 
-set style line 1 lt rgb "#A00000" lw 2 pt 1
+set style line 1 lt rgb "#A00000" lw 0.7 pt 1
 set style line 2 lt rgb "#00A000" lw 2 pt 6
 set style line 3 lt rgb "#5060D0" lw 2 pt 2
 set style line 4 lt rgb "#F25900" lw 2 pt 9
