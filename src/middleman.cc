@@ -67,13 +67,6 @@ int main(int argc, char *argv[]) {
     auto solution_end_time = std::chrono::high_resolution_clock::now();
     elapsed_time += std::chrono::duration_cast<std::chrono::nanoseconds>(
         solution_end_time - solution_start_time).count();
-    /*
-    for (int j = 0; j < result->size(); ++j) {
-      printf(" %d", result->at(j));
-    }
-    if (result->size() > 0)
-      printf("\n");
-    */
     if ( i % 500 == 0 ) {
       double percentage_completed = 100.0 * static_cast<double>(i) /
       static_cast<double>(kNumTrafficRequests);
@@ -85,5 +78,7 @@ int main(int argc, char *argv[]) {
   printf("Acceptance Ratio: %.2lf%%\n",
          100.0 * static_cast<double>(stats.num_accepted) /
              static_cast<double>(stats.num_accepted + stats.num_rejected));
+  const std::string kStatsOutputFilePrefix = "log";
+  ProcessStats(stats, kStatsOutputFilePrefix);
   return 0;
 }
