@@ -34,4 +34,23 @@ inline unsigned long long CurrentTimeNanos() {
            static_cast<unsigned long long>(ts.tv_nsec);
 }
 
+template <class T>
+double GetMean(const std::vector<T>& data) {
+  T sum = T(0);
+  const size_t kNumElements = data.size();
+  for (auto& element : data) sum += element;
+  return element / static_cast<T>(kNumElements);
+}
+
+template <class T>
+T GetNthPercentile(const std::vector<T>& data, int n) {
+  sort(data.begin(), data.end());
+  const size_t kNumElements = data.size();
+  int rank = n * kNumElements;
+  if (rank % 100) {
+    rank = (rank / 100) + 1;
+  } else rank /= 100;
+  return data[rank];
+}
+
 #endif  // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
