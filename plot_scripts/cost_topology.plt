@@ -20,4 +20,4 @@ set key top right
 
 set yr[0:100]
 
-plot 'cost_topology' using 2:3:4:xtic(1) title col fs pattern 2
+plot 'cost_topology.dat' using 2:3:4:xtic(1) title col fs pattern 2
