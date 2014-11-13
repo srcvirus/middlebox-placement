@@ -3,6 +3,7 @@
 #include "io.h"
 #include "viterbi.h"
 
+#include <chrono>
 #include <map>
 #include <utility>
 #include <memory>
@@ -21,6 +22,7 @@ std::vector<traffic_class> traffic_classes;
 std::vector<traffic_request> traffic_requests;
 std::vector<node> nodes;
 std::vector<std::vector<edge_endpoint> > graph;
+std::vector<std::vector<middlebox_instance> > deployed_mboxes;
 double per_core_cost, per_bit_transit_cost;
 double cost[MAXN][MAXN];
 int pre[MAXN][MAXN];
@@ -50,16 +52,21 @@ int main(int argc, char *argv[]) {
     }
   }
   int current_time = traffic_requests[0].arrival_time;
-  stats.start_time = CurrentTimeNanos();
+  unsigned long long elapsed_time = 0;
   stats.num_accepted = stats.num_rejected = 0;
-  for (int i = 0; i < traffic_requests.size(); ++i) {
+  const int kNumTrafficRequests = static_cast<int>(traffic_requests.size());
+  for (int i = 0; i < kNumTrafficRequests; ++i) {
     if (current_time != traffic_requests[i].arrival_time) {
       current_time = traffic_requests[i].arrival_time;
       ReleaseAllResources();
     }
+    auto solution_start_time = std::chrono::high_resolution_clock::now();
     std::unique_ptr<std::vector<int> > result =
         ViterbiCompute(traffic_requests[i]);
     UpdateResources(result.get(), traffic_requests[i]);
+    auto solution_end_time = std::chrono::high_resolution_clock::now();
+    elapsed_time += std::chrono::duration_cast<std::chrono::nanoseconds>(
+        solution_end_time - solution_start_time).count();
     /*
     for (int j = 0; j < result->size(); ++j) {
       printf(" %d", result->at(j));
@@ -67,12 +74,15 @@ int main(int argc, char *argv[]) {
     if (result->size() > 0)
       printf("\n");
     */
+    if ( i % 500 == 0 ) {
+      double percentage_completed = 100.0 * static_cast<double>(i) /
+      static_cast<double>(kNumTrafficRequests);
+      printf("%.2lf%% traffics completed\n", percentage_completed);
+    }
   }
-  stats.end_time = CurrentTimeNanos();
-  unsigned long long elapsed_time = stats.end_time - stats.start_time;
   printf("Solution time: %llu.%llus\n", elapsed_time / ONE_GIG,
          elapsed_time % ONE_GIG);
-  printf("Acceptance Ratio: %.2lf\%\n",
+  printf("Acceptance Ratio: %.2lf%%\n",
          100.0 * static_cast<double>(stats.num_accepted) /
              static_cast<double>(stats.num_accepted + stats.num_rejected));
   return 0;

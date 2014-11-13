@@ -35,6 +35,13 @@ struct middlebox {
   }
 };
 
+struct middlebox_instance {
+  const middlebox* m_box;
+  int residual_capacity;
+  middlebox_instance(const middlebox* m_box, int res_cap) : m_box(m_box),
+  residual_capacity(res_cap) { }
+};
+
 struct traffic_class {
   std::string class_name;
   int min_bandwidth;    // In Mbps.
@@ -164,6 +171,7 @@ extern std::vector<traffic_class> traffic_classes;
 extern std::vector<traffic_request> traffic_requests;
 extern std::vector<node> nodes;
 extern std::vector<std::vector<edge_endpoint> > graph;
+extern std::vector<std::vector<middlebox_instance> > deployed_mboxes;
 extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > >
     path_cache;
 extern solution_statistics stats;
