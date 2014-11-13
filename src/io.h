@@ -132,6 +132,7 @@ void InitializeTopology(const char *filename) {
   DEBUG(" node_count = %d, edge_count = %d\n", node_count, edge_count);
   graph.resize(node_count);
   nodes.resize(node_count);
+  deployed_mboxes.resize(node_count);
   for (int i = 0; i < node_count; ++i) {
     fscanf(file_ptr, "%d %d", &nodes[i].node_id, &nodes[i].num_cores);
     nodes[i].residual_cores = nodes[i].num_cores;
