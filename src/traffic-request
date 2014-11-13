@@ -1,1 +1,3 @@
 1,5,gold,firewall,ids,proxy
+0,4,silver,nat,proxy,ids,nat,firewall
+2,5,bronze,nat,ids,firewall
