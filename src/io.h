@@ -32,6 +32,7 @@ inline int GetMiddleboxIndex(const std::string &middlebox_name) {
   return -1; // Not found.
 }
 
+/*
 inline int GetTrafficClassIndex(const std::string &traffic_class_name) {
   for (int i = 0; i < traffic_classes.size(); ++i) {
     if (traffic_classes[i].class_name == traffic_class_name)
@@ -39,6 +40,7 @@ inline int GetTrafficClassIndex(const std::string &traffic_class_name) {
   }
   return -1; // Not found.
 }
+*/
 
 std::unique_ptr<std::vector<std::vector<std::string> > >
 ReadCSVFile(const char *filename) {
@@ -64,6 +66,7 @@ ReadCSVFile(const char *filename) {
   return std::move(ret_vector);
 }
 
+/*
 void InitializeTrafficClasses(const char *filename) {
   traffic_classes.clear();
   auto csv_vector = ReadCSVFile(filename);
@@ -80,6 +83,7 @@ void PrintTrafficClasses() {
     printf("[i = %d] %s\n", i, traffic_classes[i].GetDebugString().c_str());
   }
 }
+*/
 
 void InitializeMiddleboxes(const char *filename) {
   middleboxes.clear();
@@ -103,15 +107,12 @@ void InitializeTrafficRequests(const char *filename) {
   for (int i = 0; i < csv_vector->size(); ++i) {
     std::vector<int> mbox_sequence;
     std::vector<std::string> &row = (*csv_vector)[i];
-    // row[2] contains the name of the traffic class.
-    int sla_specification = GetTrafficClassIndex(row[2]);
-
-    for (int mbox_seq_index = 3; mbox_seq_index < row.size();
+    for (int mbox_seq_index = 6; mbox_seq_index < row.size();
          ++mbox_seq_index) {
       mbox_sequence.push_back(GetMiddleboxIndex(row[mbox_seq_index]));
     }
-    traffic_requests.emplace_back(row[0], row[1], sla_specification,
-                                  mbox_sequence);
+    traffic_requests.emplace_back(row[0], row[1], row[2], row[3], row[4],
+                                  row[5], mbox_sequence);
   }
 }
 
@@ -131,6 +132,7 @@ void InitializeTopology(const char *filename) {
   DEBUG(" node_count = %d, edge_count = %d\n", node_count, edge_count);
   graph.resize(node_count);
   nodes.resize(node_count);
+  deployed_mboxes.resize(node_count);
   for (int i = 0; i < node_count; ++i) {
     fscanf(file_ptr, "%d %d", &nodes[i].node_id, &nodes[i].num_cores);
     nodes[i].residual_cores = nodes[i].num_cores;

@@ -35,6 +35,13 @@ struct middlebox {
   }
 };
 
+struct middlebox_instance {
+  const middlebox* m_box;
+  int residual_capacity;
+  middlebox_instance(const middlebox* m_box, int res_cap) : m_box(m_box),
+  residual_capacity(res_cap) { }
+};
+
 struct traffic_class {
   std::string class_name;
   int min_bandwidth;    // In Mbps.
@@ -56,13 +63,32 @@ struct traffic_class {
 };
 
 struct traffic_request {
+  int arrival_time;
   int source, destination;
+
+  // Deprecated
   int sla_specification;
+
+  // Minimum bandwidth demand in Kbps.
+  int min_bandwidth;
+
+  // Maximum delay according to the SLA.
+  int max_delay;
+
+  // Penalty for per 1ms guarantee violation.
+  double delay_penalty;
   std::vector<int> middlebox_sequence;
-  traffic_request(const std::string &tr_source, const std::string &tr_dest,
-                  int tr_sla_specification, const std::vector<int> &tr_mbox_seq)
-      : source(atoi(tr_source.c_str())), destination(atoi(tr_dest.c_str())),
-        sla_specification(tr_sla_specification),
+  traffic_request(const std::string &tr_arrival_time,
+                  const std::string &tr_source, const std::string &tr_dest,
+                  const std::string &tr_min_bandwidth,
+                  const std::string &tr_max_delay,
+                  const std::string &tr_delay_penalty,
+                  const std::vector<int> &tr_mbox_seq)
+      : arrival_time(atoi(tr_arrival_time.c_str())),
+        source(atoi(tr_source.c_str())), destination(atoi(tr_dest.c_str())),
+        min_bandwidth(atoi(tr_min_bandwidth.c_str())),
+        max_delay(atoi(tr_max_delay.c_str())),
+        delay_penalty(atof(tr_delay_penalty.c_str())),
         middlebox_sequence(tr_mbox_seq) {}
   std::string GetDebugString() {
     std::string seq_string;
@@ -70,9 +96,10 @@ struct traffic_request {
       seq_string += std::to_string(value) + " ";
     }
     return "source : " + std::to_string(source) + ", destination : " +
-           std::to_string(destination) + ", sla_specification : " +
-           std::to_string(sla_specification) +
-           ", middlebox_sequence_length : " +
+           std::to_string(destination) + ", min_bandwidth : " +
+           std::to_string(min_bandwidth) + ", max_delay : " +
+           std::to_string(max_delay) + ", delay_penalty : " +
+           std::to_string(delay_penalty) + ", middlebox_sequence_length : " +
            std::to_string(middlebox_sequence.size()) +
            ", middlebox_sequence: " + seq_string;
   }
@@ -101,14 +128,53 @@ struct resource {
   std::vector<int> cpu_cores;
 };
 
+// Statistics for each traffic embedding.
+struct traffic_statistics {
+  // Arrival time of the traffic request.
+  int arrival_time;
+
+  // Energy cost of embedding the traffic request.
+  double cost;
+
+  traffic_statistics(int a_time, double c) : arrival_time(a_time), cost(c) {}
+};
+
+// Statistics for the whole solution.
+struct solution_statistics {
+  // Start time of the simulation in nano seconds.
+  unsigned long long start_time;
+
+  // End time of the simulation in nano seconds.
+  unsigned long long end_time;
+
+  // The number of accepted and rejected embeddings.
+  int num_accepted, num_rejected;
+  std::vector<traffic_statistics> t_stats;
+};
+
+inline int GetNodeCount(const std::vector<std::vector<edge_endpoint> >& g) {
+  return g.size();
+}
+
+inline int GetEdgeCount(const std::vector<std::vector<edge_endpoint> >& g) {
+  int edge_count = 0;
+  for (int i = 0; i < g.size(); ++i) {
+    edge_count += g[i].size();
+  }
+  edge_count /= 2;
+  return edge_count;
+}
+
 // Global data structures;
 extern std::vector<middlebox> middleboxes;
 extern std::vector<traffic_class> traffic_classes;
 extern std::vector<traffic_request> traffic_requests;
 extern std::vector<node> nodes;
 extern std::vector<std::vector<edge_endpoint> > graph;
+extern std::vector<std::vector<middlebox_instance> > deployed_mboxes;
 extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > >
     path_cache;
+extern solution_statistics stats;
 extern double per_core_cost, per_bit_transit_cost;
 extern double cost[MAXN][MAXN];
 extern int pre[MAXN][MAXN];
