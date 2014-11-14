@@ -93,11 +93,14 @@ int main(int argc, char *argv[]) {
         printf("%.2lf%% traffics completed\n", percentage_completed);
       }
     }
+    RefreshServerStats(current_time);
     printf("Solution time: %llu.%llus\n", elapsed_time / ONE_GIG,
            elapsed_time % ONE_GIG);
     printf("Acceptance Ratio: %.2lf%%\n",
            100.0 * static_cast<double>(stats.num_accepted) /
                static_cast<double>(stats.num_accepted + stats.num_rejected));
+    const std::string kStatsOutputFilePrefix = "log";
+    ProcessStats(stats, kStatsOutputFilePrefix);
   }
   return 0;
 }
