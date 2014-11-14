@@ -64,7 +64,7 @@ struct traffic_class {
 
 struct traffic_request {
   int arrival_time;
-  int duration = 300;
+  int duration;
   int source, destination;
 
   // Deprecated

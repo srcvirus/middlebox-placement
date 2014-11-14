@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
     //file to write opex and running time on each arrival time
     FILE* tFile = fopen("time_opex_runtime", "w");
     for (int i = 0; i < traffic_requests.size(); ) {
+      traffic_request[i].duration = 300;
       fprintf(tFile, "%d ", current_time);
       for (;current_time == traffic_requests[i].arrival_time; ++i) {
         current_traffic_requests.push_back(traffic_requests[i]);
@@ -82,6 +83,7 @@ int main(int argc, char *argv[]) {
     stats.num_accepted = stats.num_rejected = 0;
     const int kNumTrafficRequests = static_cast<int>(traffic_requests.size());
     for (int i = 0; i < kNumTrafficRequests; ++i) {
+      traffic_request[i].duration = 300;
       if (current_time != traffic_requests[i].arrival_time) {
         RefreshServerStats(current_time);
         current_time = traffic_requests[i].arrival_time;
