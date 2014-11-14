@@ -46,7 +46,7 @@ void print_IloInt3dArray(IloInt3dArray a, int dimension1, int dimension2, int di
   }
 }
 
-void run_cplex(){
+void run_cplex(std::vector<traffic_request> traffic_requests){
     
     IloEnv env;
     try{

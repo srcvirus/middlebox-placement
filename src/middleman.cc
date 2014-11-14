@@ -56,7 +56,19 @@ int main(int argc, char *argv[]) {
     }
   }
   if (algorithm == "cplex") {
-    run_cplex();
+    std::vector<traffic_request> current_traffic_requests;
+    int current_time = traffic_requests[0].arrival_time;
+    for (int i = 0; i < traffic_requests.size(); ) {
+      for (;current_time == traffic_requests[i].arrival_time; ++i) {
+        current_traffic_requests.push_back(traffic_requests[i]);
+      }
+      current_time = traffic_requests[i].arrival_time;
+      run_cplex(current_traffic_requests);
+      current_traffic_requests.clear();
+      cout << "Done with one iteration" << endl;
+      int foo;
+      cin >> foo;
+    }
   } else if (algorithm == "viterbi") {
     int current_time = traffic_requests[0].arrival_time;
     unsigned long long elapsed_time = 0;
