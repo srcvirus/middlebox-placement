@@ -9,7 +9,7 @@ set style line 81 lt rgb "#808080"
 set grid back linestyle 81
 set border 3 back linestyle 80
 
-set xtics nomirror
+set xtics rotate by 45 right 
 set ytics nomirror
 
 set style fill pattern border
@@ -20,4 +20,4 @@ set key top right
 
 set yr[0:1.25]
 
-plot 'log.log.per_server_util' using 2:3:4:xtic(1) title col fs pattern 2
+plot 'log.log.per_server_util' using 2:3:4:xtic(1) title col  fs pattern 2
