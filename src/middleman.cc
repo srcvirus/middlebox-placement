@@ -58,17 +58,24 @@ int main(int argc, char *argv[]) {
   if (algorithm == "cplex") {
     std::vector<traffic_request> current_traffic_requests;
     int current_time = traffic_requests[0].arrival_time;
+    double opex, running_time;
+    //file to write opex and running time on each arrival time
+    FILE* tFile = fopen("time_opex_runtime", "w");
     for (int i = 0; i < traffic_requests.size(); ) {
+      fprintf(tFile, "%d ", current_time);
       for (;current_time == traffic_requests[i].arrival_time; ++i) {
         current_traffic_requests.push_back(traffic_requests[i]);
       }
       current_time = traffic_requests[i].arrival_time;
-      run_cplex(current_traffic_requests);
+      run_cplex(current_traffic_requests, opex, running_time);
       current_traffic_requests.clear();
-      cout << "Done with one iteration" << endl;
-      int foo;
-      cin >> foo;
+      fprintf(tFile, "%lf %lf\n", opex, running_time);
+      fflush(tFile);
+      //cout << "Done with one iteration" << endl;
+      //int foo;
+      //cin >> foo;
     }
+    fclose(tFile);
   } else if (algorithm == "viterbi") {
     int current_time = traffic_requests[0].arrival_time;
     unsigned long long elapsed_time = 0;

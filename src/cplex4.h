@@ -46,7 +46,7 @@ void print_IloInt3dArray(IloInt3dArray a, int dimension1, int dimension2, int di
   }
 }
 
-void run_cplex(std::vector<traffic_request> traffic_requests){
+void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, double &running_time){
     
     IloEnv env;
     try{
@@ -751,12 +751,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests){
         IloExpr objective(env);
         //add deployment cost
         IloExpr deploymentCost(env); 
-        for (int t = 0; t < kTrafficCount; ++t) {
-          for(int n = 0; n < trafficNodeCount[t]; ++n) {
-            for (int m = 0; m < kMboxCount; ++m) {
-              deploymentCost += D_m[m] * (xtnm[t][n][m] - hat_xtnm[t][n][m]);
-            }
-          }
+        for (int m = 0; m < kMboxCount; ++m) {
+          deploymentCost += D_m[m] * ym[m];
         }
         objective += alpha * deploymentCost;
         //add energy cost to the objective
@@ -772,15 +768,15 @@ void run_cplex(std::vector<traffic_request> traffic_requests){
         objective += beta * energyCost;
         //add traffic forearding cost
         IloExpr forwardingCost(env); 
-        for (int t = 0, beta; t < kTrafficCount; ++t) {
-          beta = traffic_requests[t].min_bandwidth;
+        for (int t = 0, beta_t; t < kTrafficCount; ++t) {
+          beta_t = traffic_requests[t].min_bandwidth;
           for(int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
             for (int n2 : nbr[t][n1]) {
               if (n1 < n2) {
                 for (int _u = 0; _u < kSwitchCount; ++_u) {
                   for(int _v : __nbr[_u]) {
-                    forwardingCost += (wtuv_u_v[t][n1][n2][_u][_v] + wtuv_u_v[t][n1][n2][_v][_u]) *  delta_u_v[_u][_v] * 
-                                        beta * per_bit_transit_cost;
+                    forwardingCost += (wtuv_u_v[t][n1][n2][_u][_v] + wtuv_u_v[t][n1][n2][_v][_u]) *  300 * 
+                                        beta_t * per_bit_transit_cost;
                   }
                 }
               }
@@ -936,6 +932,9 @@ void run_cplex(std::vector<traffic_request> traffic_requests){
         cout << resultValue << endl;
         cout << timer.getTime() << endl;
         cout << "========================================" << endl;
+
+        opex = resultValue;
+        running_time = timer.getTime();
         
         /*
         //print ftl_l
