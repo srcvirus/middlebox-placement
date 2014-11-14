@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
   const int kNumTrafficRequests = static_cast<int>(traffic_requests.size());
   for (int i = 0; i < kNumTrafficRequests; ++i) {
     if (current_time != traffic_requests[i].arrival_time) {
+      RefreshServerStats(current_time);
       current_time = traffic_requests[i].arrival_time;
       ReleaseAllResources();
     }

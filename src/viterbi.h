@@ -105,6 +105,16 @@ inline void ReducePathResidualBandwidth(int source, int destination,
   }
 }
 
+inline void RefreshServerStats(int timestamp) {
+  for (auto& node : nodes) {
+    if (node.num_cores > 0) {
+      double utilization = static_cast<double>(node.num_cores - node.residual_cores) /
+                             static_cast<double>(node.num_cores);
+      stats.server_stats.emplace_back(timestamp, node.node_id, utilization);                           
+    }
+  }
+}
+
 inline void ReduceNodeCapacity(int node, const middlebox &m_box) {
   nodes[node].residual_cores -= m_box.cpu_requirement;
 }
