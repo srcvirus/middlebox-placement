@@ -842,6 +842,11 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
     }
     // cout << "cnst count: " << cnst_count << endl;
     timer.restart();
+    //turn-off console output for cplex
+    cplex.setOut(env.getNullStream());
+    //set time limit
+    const IloInt timeLimit = 60*60; // one hour
+    cplex.setParam(IloCplex::TiLim, timeLimit);
     if (!cplex.solve()) {
       timer.stop();
       cout << "Could not solve ILP!" << endl;
@@ -880,13 +885,13 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         for (int m = 0; m < kMboxCount; ++m) {
           if (xtnm_vals[m] == 1) {
             result[t].push_back(pseudo2actual[switch4mbox[m]]);
-            cout << "Traffic " << t << " node " << n
-                 << " provisioned on middlebox " << m << endl;
+            //cout << "Traffic " << t << " node " << n << " provisioned on middlebox " << m << endl;
           }
         }
       }
     }
 
+    /*
     // print ym
     cout << endl;
     IloNumArray ym_vals(env, kMboxCount);
@@ -908,7 +913,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
              << sw << endl;
       }
     }
-
+    */
+    /*
     // print ztn_n
     cout << endl;
     for (int t = 0; t < kTrafficCount; ++t) {
@@ -925,7 +931,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         }
       }
     }
-
+    */
+    /*
     cout << endl;
     for (int t = 0; t < kTrafficCount; ++t) {
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
@@ -953,6 +960,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         }
       }
     }
+    */
 
     // Final output
     cout << endl << "========================================" << endl
