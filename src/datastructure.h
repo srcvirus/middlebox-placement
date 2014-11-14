@@ -64,6 +64,7 @@ struct traffic_class {
 
 struct traffic_request {
   int arrival_time;
+  int duration = 300;
   int source, destination;
 
   // Deprecated
@@ -139,6 +140,15 @@ struct traffic_statistics {
   traffic_statistics(int a_time, double c) : arrival_time(a_time), cost(c) {}
 };
 
+struct server_statistics {
+  int timestamp;
+  int server_id;
+  double utilization;
+  server_statistics(int ts, int sid, double util) : timestamp(ts),
+                                                    server_id(sid), 
+                                                    utilization(util) {}
+};
+
 // Statistics for the whole solution.
 struct solution_statistics {
   // Start time of the simulation in nano seconds.
@@ -150,6 +160,7 @@ struct solution_statistics {
   // The number of accepted and rejected embeddings.
   int num_accepted, num_rejected;
   std::vector<traffic_statistics> t_stats;
+  std::vector<server_statistics> server_stats;
 };
 
 inline int GetNodeCount(const std::vector<std::vector<edge_endpoint> >& g) {

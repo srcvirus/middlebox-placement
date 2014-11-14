@@ -57,17 +57,19 @@ T GetNthPercentile(const std::vector<T>& data, int n) {
 
 void ProcessStats(solution_statistics& s, 
                   const std::string& output_file_prefix) {
-  const std::string cost_ts_file_name = output_file_prefix + ".cost.ts";
-  const std::string cost_summary_file_name = 
+  const std::string kCostTsFileName = output_file_prefix + ".cost.ts";
+  const std::string kCostSummaryFileName = 
       output_file_prefix +  ".cost.summary";
-  FILE* cost_ts_file = fopen(cost_ts_file_name.c_str(), "w");
-  FILE* cost_summary_file = fopen(cost_summary_file_name.c_str(), "w");
+  const std::string kUtilTsFileName = output_file_prefix + ".util.ts";
 
-  // Write the time series of cost data to file.
+  // Process cost data.
+  FILE* cost_ts_file = fopen(kCostTsFileName.c_str(), "w");
   int current_time = 0;
   std::vector<double> cost_data;
   std::vector<double> global_cost_data;
   s.t_stats.push_back(traffic_statistics(INF, INF));
+  // First write the time series data to file. For each time instance write the
+  // mean, 5th, and 95th percentile of cost.
   for (auto& t_stats : s.t_stats) {
     if (current_time != t_stats.arrival_time) {
       double mean_cost = GetMean(cost_data);
@@ -81,17 +83,39 @@ void ProcessStats(solution_statistics& s,
     global_cost_data.push_back(t_stats.cost);
     cost_data.push_back(t_stats.cost);
   }
+  fclose(cost_ts_file);
   s.t_stats.pop_back();
   global_cost_data.pop_back();
+
   // Write the mean, 5th, and 95th percentile of the cost to file.
   double mean_cost = GetMean(global_cost_data);
   double fifth_percentile_cost = GetNthPercentile(global_cost_data, 5);
   double ninety_fifth_percentile_cost = GetNthPercentile(global_cost_data, 95);
+  FILE* cost_summary_file = fopen(kCostSummaryFileName.c_str(), "w");
   fprintf(cost_summary_file, "%.3lf %.3lf %.3lf\n", mean_cost,
           fifth_percentile_cost, ninety_fifth_percentile_cost);
-  fclose(cost_ts_file);
   fclose(cost_summary_file);
-  
-}
 
+  // Process utilization data.
+  FILE* util_ts_file = fopen(kUtilTsFileName.c_str(), "w");
+  current_time = 0;
+  std::vector<double> util_data;
+  s.server_stats.emplace_back(INF, NIL, INF);
+  DEBUG("bingo\n");
+  for (auto& server_stat : s.server_stats) {
+    if (current_time != server_stat.timestamp) {
+      double mean_util = GetMean(util_data);
+      double fifth_percentile_util = GetNthPercentile(util_data, 5);
+      double ninety_fifth_percentile_util = GetNthPercentile(util_data, 95);
+      fprintf(util_ts_file, "%d %.3lf %.3lf %.3lf\n", current_time, mean_util,
+                            fifth_percentile_util, ninety_fifth_percentile_util);
+      DEBUG("%d %.3lf %.3lf %.3lf\n", current_time, mean_util,
+                            fifth_percentile_util, ninety_fifth_percentile_util);
+      current_time = server_stat.timestamp;
+      util_data.clear();
+    }
+    util_data.push_back(server_stat.utilization);
+  }
+  fclose(util_ts_file);
+}
 #endif  // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_

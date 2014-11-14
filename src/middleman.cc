@@ -33,7 +33,7 @@ std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
 solution_statistics stats;
 
 int main(int argc, char *argv[]) {
-  if (argc < 7) {
+  if (argc < 6) {
     puts(kUsage.c_str());
     return 1;
   }
@@ -83,27 +83,31 @@ int main(int argc, char *argv[]) {
     const int kNumTrafficRequests = static_cast<int>(traffic_requests.size());
     for (int i = 0; i < kNumTrafficRequests; ++i) {
       if (current_time != traffic_requests[i].arrival_time) {
-	current_time = traffic_requests[i].arrival_time;
-	ReleaseAllResources();
+        RefreshServerStats(current_time);
+        current_time = traffic_requests[i].arrival_time;
+        ReleaseAllResources();
       }
       auto solution_start_time = std::chrono::high_resolution_clock::now();
       std::unique_ptr<std::vector<int> > result =
-        ViterbiCompute(traffic_requests[i]);
+          ViterbiCompute(traffic_requests[i]);
       UpdateResources(result.get(), traffic_requests[i]);
       auto solution_end_time = std::chrono::high_resolution_clock::now();
       elapsed_time += std::chrono::duration_cast<std::chrono::nanoseconds>(
-        solution_end_time - solution_start_time).count();
-      if ( i % 500 == 0 ) {
-	double percentage_completed = 100.0 * static_cast<double>(i) /
-	  static_cast<double>(kNumTrafficRequests);
-	printf("%.2lf%% traffics completed\n", percentage_completed);
+          solution_end_time - solution_start_time).count();
+      if (i % 500 == 0) {
+        double percentage_completed = 100.0 * static_cast<double>(i) /
+                                      static_cast<double>(kNumTrafficRequests);
+        printf("%.2lf%% traffics completed\n", percentage_completed);
       }
     }
+    RefreshServerStats(current_time);
     printf("Solution time: %llu.%llus\n", elapsed_time / ONE_GIG,
-	   elapsed_time % ONE_GIG);
+           elapsed_time % ONE_GIG);
     printf("Acceptance Ratio: %.2lf%%\n",
-	   100.0 * static_cast<double>(stats.num_accepted) /
-	   static_cast<double>(stats.num_accepted + stats.num_rejected));
+           100.0 * static_cast<double>(stats.num_accepted) /
+               static_cast<double>(stats.num_accepted + stats.num_rejected));
+    const std::string kStatsOutputFilePrefix = "log";
+    ProcessStats(stats, kStatsOutputFilePrefix);
   }
   return 0;
 }

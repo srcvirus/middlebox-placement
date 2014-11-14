@@ -14,12 +14,12 @@ set style line 2 lt rgb "#00A000" lw 2 pt 6
 set style line 3 lt rgb "#5060D0" lw 2 pt 2
 set style line 4 lt rgb "#F25900" lw 2 pt 9
 
-set output "cost_time_series.pdf"
+set output "fragmentation_time_series.pdf"
 set xlabel "Time (s)"
-set ylabel "OPEX ($)"
+set ylabel "Mean Fragmentation"
 set key top right
 
 set xr[0:10000]
-set yr[0:200]
+set yr[0:1]
 
-plot "log.cost.ts" using 1:2 title "Heuristic Solution" w line ls 1
+plot "log.frag.ts" using 1:2 title "Heuristic Solution" w line ls 1

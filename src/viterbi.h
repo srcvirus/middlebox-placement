@@ -38,8 +38,8 @@ inline int GetPathResidualBandwidth(int source, int destination) {
   if (path_cache[cache_index]) {
     path_ptr = path_cache[cache_index].get();
   } else {
-    auto path = ComputeShortestPath(source, destination);
-    path_cache[cache_index] = std::move(path);
+    path_cache[cache_index] = ComputeShortestPath(source, destination);
+    //    path_cache[cache_index] = std::move(path);
     path_ptr = path_cache[cache_index].get();
   }
   int residual_bandwidth = INF;
@@ -62,7 +62,7 @@ inline void ReduceEdgeResidualBandwidth(int source, int destination,
 }
 
 void DecommissionAllMiddleboxes() {
-  for (auto& mboxes : deployed_mboxes)
+  for (auto &mboxes : deployed_mboxes)
     mboxes.clear();
 }
 
@@ -86,8 +86,6 @@ inline void ReleaseAllResources() {
   ReleaseBandwidth();
 }
 
-
-
 inline void ReducePathResidualBandwidth(int source, int destination,
                                         int bandwidth) {
   std::pair<int, int> cache_index(source, destination);
@@ -105,14 +103,25 @@ inline void ReducePathResidualBandwidth(int source, int destination,
   }
 }
 
+inline void RefreshServerStats(int timestamp) {
+  for (auto &node : nodes) {
+    if (node.num_cores > 0) {
+      double utilization =
+          static_cast<double>(node.num_cores - node.residual_cores) /
+          static_cast<double>(node.num_cores);
+      stats.server_stats.emplace_back(timestamp, node.node_id, utilization);
+    }
+  }
+}
+
 inline void ReduceNodeCapacity(int node, const middlebox &m_box) {
   nodes[node].residual_cores -= m_box.cpu_requirement;
 }
 
-void UpdateMiddleboxInstances(int current_node, const middlebox& m_box, const
-traffic_request& t_request) {
+void UpdateMiddleboxInstances(int current_node, const middlebox &m_box,
+                              const traffic_request &t_request) {
   bool new_provisioned = true;
-  for (middlebox_instance& mbox_inst : deployed_mboxes[current_node]) {
+  for (middlebox_instance &mbox_inst : deployed_mboxes[current_node]) {
     if (mbox_inst.m_box->middlebox_name == m_box.middlebox_name) {
       if (mbox_inst.residual_capacity >= t_request.min_bandwidth) {
         new_provisioned = false;
@@ -121,8 +130,8 @@ traffic_request& t_request) {
     }
   }
   if (new_provisioned) {
-    deployed_mboxes[current_node].emplace_back(&m_box,
-    m_box.processing_capacity);
+    deployed_mboxes[current_node]
+        .emplace_back(&m_box, m_box.processing_capacity);
     ReduceNodeCapacity(current_node, m_box);
   }
 }
@@ -141,7 +150,7 @@ inline int IsResourceAvailable(int prev_node, int current_node,
   if ((GetPathResidualBandwidth(prev_node, current_node) >=
        t_request.min_bandwidth)) {
     // Check if we can use existing middlebox of the same type.
-    for (middlebox_instance& mbox_inst : deployed_mboxes[current_node]) {
+    for (middlebox_instance &mbox_inst : deployed_mboxes[current_node]) {
       if (mbox_inst.m_box->middlebox_name == m_box.middlebox_name) {
         if (mbox_inst.residual_capacity >= t_request.min_bandwidth) {
           return 1;
@@ -149,8 +158,8 @@ inline int IsResourceAvailable(int prev_node, int current_node,
       }
     }
     // If we cannot use existing ones, then we need to instantiate new one.
-    if (resource_vector.cpu_cores[current_node] >= m_box.cpu_requirement) {    
-        return 1;
+    if (resource_vector.cpu_cores[current_node] >= m_box.cpu_requirement) {
+      return 1;
     }
   }
   return 0;
@@ -167,20 +176,42 @@ inline double GetSLAViolationCost(int prev_node, int current_node,
   return 0.0;
 }
 
-inline double GetTransitCost(int prev_node, int current_node) {
-  return 1.0 * shortest_path[prev_node][current_node] * per_bit_transit_cost;
+inline double GetTransitCost(int prev_node, int current_node,
+                             const traffic_request &t_request) {
+  std::vector<int> *path_ptr = nullptr;
+  std::pair<int, int> cache_index(prev_node, current_node);
+  if (path_cache[cache_index]) {
+    path_ptr = path_cache[cache_index].get();
+  } else {
+    path_cache[cache_index] = ComputeShortestPath(prev_node, current_node);
+    path_ptr = path_cache[cache_index].get();
+  }
+  if (path_ptr) {
+    int path_length = path_ptr->size();
+    return 1.0 * path_length * per_bit_transit_cost * t_request.min_bandwidth *
+           t_request.duration;
+  }
+  return INF;
 }
 
-inline double GetEnergyCost(const middlebox &m_box) {
+inline double GetEnergyCost(int current_node, const middlebox &m_box,
+                            const traffic_request &t_request) {
+  for (middlebox_instance &mbox_inst : deployed_mboxes[current_node]) {
+    if (mbox_inst.m_box->middlebox_name == m_box.middlebox_name) {
+      if (mbox_inst.residual_capacity >= t_request.min_bandwidth) {
+        return 0;
+      }
+    }
+  }
   return per_core_cost * m_box.cpu_requirement;
 }
 
-inline double GetDeploymentCost(int current_node, const middlebox &m_box, const
-traffic_request& t_request) {
+inline double GetDeploymentCost(int current_node, const middlebox &m_box,
+                                const traffic_request &t_request) {
   // If we can use existing middlebox then there is no deployment cost.
-  for (middlebox_instance& mbox_inst : deployed_mboxes[current_node]) {
+  for (middlebox_instance &mbox_inst : deployed_mboxes[current_node]) {
     if (mbox_inst.m_box->middlebox_name == m_box.middlebox_name) {
-      if(mbox_inst.residual_capacity >= t_request.min_bandwidth) {
+      if (mbox_inst.residual_capacity >= t_request.min_bandwidth) {
         return 0.0;
       }
     }
@@ -192,8 +223,8 @@ traffic_request& t_request) {
 double GetCost(int prev_node, int current_node, const middlebox &m_box,
                const traffic_request &t_request) {
   double deployment_cost = GetDeploymentCost(current_node, m_box, t_request);
-  double energy_cost = GetEnergyCost(m_box);
-  double transit_cost = GetTransitCost(prev_node, current_node);
+  double energy_cost = GetEnergyCost(current_node, m_box, t_request);
+  double transit_cost = GetTransitCost(prev_node, current_node, t_request);
   double sla_violation_cost =
       GetSLAViolationCost(prev_node, current_node, t_request);
   DEBUG("dep_cost = %lf, en_cost = %lf, tr_cost = %lf,"
@@ -267,10 +298,10 @@ ViterbiCompute(const traffic_request &t_request) {
         current_vector[current_node].cpu_cores =
             previous_vector[min_index].cpu_cores;
         bool new_middlebox_deployed = true;
-        for (middlebox_instance& mbox_instance : 
-               deployed_mboxes[current_node]) {
+        for (middlebox_instance &mbox_instance :
+             deployed_mboxes[current_node]) {
           if (mbox_instance.m_box->middlebox_name == m_box.middlebox_name &&
-                mbox_instance.residual_capacity >= t_request.min_bandwidth) {
+              mbox_instance.residual_capacity >= t_request.min_bandwidth) {
             new_middlebox_deployed = false;
             break;
           }
@@ -291,7 +322,7 @@ ViterbiCompute(const traffic_request &t_request) {
   for (int cur_node = 0; cur_node < kNumNodes; ++cur_node) {
     double transition_cost =
         cost[kNumStages - 1][cur_node] +
-        GetTransitCost(cur_node, t_request.destination) +
+        GetTransitCost(cur_node, t_request.destination, t_request) +
         GetSLAViolationCost(cur_node, t_request.destination, t_request);
     if (min_cost > transition_cost) {
       min_cost = transition_cost;
