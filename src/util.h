@@ -101,12 +101,15 @@ void ProcessStats(solution_statistics& s,
   current_time = 0;
   std::vector<double> util_data;
   s.server_stats.emplace_back(INF, NIL, INF);
+  DEBUG("bingo\n");
   for (auto& server_stat : s.server_stats) {
-    if (current_time >= server_stat.timestamp) {
+    if (current_time != server_stat.timestamp) {
       double mean_util = GetMean(util_data);
       double fifth_percentile_util = GetNthPercentile(util_data, 5);
       double ninety_fifth_percentile_util = GetNthPercentile(util_data, 95);
       fprintf(util_ts_file, "%d %.3lf %.3lf %.3lf\n", current_time, mean_util,
+                            fifth_percentile_util, ninety_fifth_percentile_util);
+      DEBUG("%d %.3lf %.3lf %.3lf\n", current_time, mean_util,
                             fifth_percentile_util, ninety_fifth_percentile_util);
       current_time = server_stat.timestamp;
       util_data.clear();
