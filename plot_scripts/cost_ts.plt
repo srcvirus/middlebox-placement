@@ -20,6 +20,6 @@ set ylabel "OPEX ($)"
 set key top right
 
 set xr[0:10000]
-set yr[5000:65000]
+set yr[150000:2500000]
 
 plot "log.cost.ts" using 1:2 title "Heuristic Solution" w line ls 1
