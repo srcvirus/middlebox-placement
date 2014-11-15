@@ -40,6 +40,7 @@ int main(int argc, char* argv[]) {
     int v = node_dictionary[std::string(router_b)];
     if (visited[u][v] || visited[v][u]) continue;
     visited[u][v] = true;
+    if (ospf_w > 10) ospf_w /= 10;
     fprintf(ofp, "%d %d %d %d\n", u, v, bw, ospf_w);
   }
   return 0;
