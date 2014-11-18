@@ -18,6 +18,6 @@ set xlabel "Topology"
 set ylabel "Mean OPEX($)"
 set key top right
 
-set yr[0:100]
+set yr[50:400]
 
 plot 'cost_topology.dat' using 2:3:4:xtic(1) title col fs pattern 2

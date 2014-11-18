@@ -188,10 +188,19 @@ inline double GetTransitCost(int prev_node, int current_node,
   }
   if (path_ptr) {
     int path_length = path_ptr->size();
-    return 1.0 * path_length * per_bit_transit_cost * t_request.min_bandwidth *
+    return (1.0 / 1000.0 ) * path_length * per_bit_transit_cost * t_request.min_bandwidth *
            t_request.duration;
   }
   return INF;
+}
+
+double GetServerEnergyConsumption(int num_cores_used) {
+  int full_servers_used = num_cores_used / NUM_CORES_PER_SERVER;
+  double energy_consumed = static_cast<double>(full_servers_used *
+  SERVER_PEAK_ENERGY);
+  int residual_cores = num_cores_used % NUM_CORES_PER_SERVER;
+  energy_consumed += POWER_CONSUMPTION_ONE_SERVER(num_cores_used);
+  return energy_consumed / 1000.0;
 }
 
 inline double GetEnergyCost(int current_node, const middlebox &m_box,
@@ -203,7 +212,15 @@ inline double GetEnergyCost(int current_node, const middlebox &m_box,
       }
     }
   }
-  return per_core_cost * m_box.cpu_requirement;
+  int previously_used_cores = nodes[current_node].num_cores -
+  nodes[current_node].residual_cores;
+  int currently_used_cores = previously_used_cores + m_box.cpu_requirement;
+  double duration_hours = static_cast<double>(t_request.duration / 60.0);
+  double previous_cost = GetServerEnergyConsumption(previously_used_cores) *
+                           duration_hours * PER_UNIT_ENERGY_PRICE;
+  double current_cost = GetServerEnergyConsumption(currently_used_cores) *
+                          duration_hours * PER_UNIT_ENERGY_PRICE;
+  return current_cost - previous_cost;
 }
 
 inline double GetDeploymentCost(int current_node, const middlebox &m_box,
