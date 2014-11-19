@@ -778,6 +778,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
     objective += alpha * deploymentCost;
     // add energy cost to the objective
     IloExpr energyCost(env);
+    /*
     for (int _n = 0; _n < kServerCount; ++_n) {
       for (int r = 0; r < kResourceCount; ++r) {
         for (int i = 0, m; i < mbox4server[_n].size(); ++i) {
@@ -786,20 +787,22 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         }
       }
     }
+    */
+    for (int m = 0; m < kMboxCount; ++m) {
+      energyCost += ym[m] * cmr[m][0] * per_core_cost;
+    }
     objective += beta * energyCost;
     // add traffic forwarding cost
+    cout << "Traffic Count " << kTrafficCount << endl;
     IloExpr forwardingCost(env);
     for (int t = 0, beta_t; t < kTrafficCount; ++t) {
       beta_t = traffic_requests[t].min_bandwidth;
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
         for (int n2 : nbr[t][n1]) {
-          if (n1 < n2) {
+          if (n2 > n1) {
             for (int _u = 0; _u < kSwitchCount; ++_u) {
               for (int _v : __nbr[_u]) {
-                forwardingCost +=
-                    (wtuv_u_v[t][n1][n2][_u][_v] +
-                     wtuv_u_v[t][n1][n2][_v][_u]) *
-                    300 * beta_t * per_bit_transit_cost;
+                forwardingCost += 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * beta_t * per_bit_transit_cost * 300;
               }
             }
           }
@@ -818,8 +821,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
             IloExpr delay(env);
             for (int _u = 0; _u < kSwitchCount; ++_u) {
               for (int _v : __nbr[_u]) {
-                delay += wtuv_u_v[t][n1][n2][_u][_v] * delta_u_v[_u][_v] +
-                         wtuv_u_v[t][n1][n2][_v][_u] * delta_u_v[_v][_u];
+                delay += 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * delta_u_v[_u][_v];
               }
             }
             penalty += (delay - tr.max_delay) * tr.delay_penalty;
@@ -875,6 +877,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
 
     cout << "Solution Status = " << cplex.getStatus() << endl;
     cout << "Solution Value = " << (resultValue = cplex.getObjValue()) << endl;
+
 
     // print xtnm
     cout << endl;
@@ -961,6 +964,35 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
       }
     }
     */
+
+    IloNum depCost = 0.0;
+    IloNum enrCost = 0.0;
+    IloNumArray ym_vals(env, kMboxCount);
+    cplex.getValues(ym, ym_vals);
+    for (int m = 0; m < kMboxCount; ++m) {
+      depCost += D_m[m] * ym_vals[m];
+      enrCost += ym_vals[m] * cmr[m][0] * per_core_cost * 300;
+    }
+    cout << "Deployment Cost = " << depCost << endl;
+    cout << "Energy Cost = " << enrCost << endl;
+    IloNum fwdCost = 0.0;
+    for (int t = 0, beta_t, value; t < kTrafficCount; ++t) {
+      beta_t = traffic_requests[t].min_bandwidth;
+      for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
+        for (int n2 : nbr[t][n1]) {
+          if (n1 < n2) {
+            for (int _u = 0; _u < kSwitchCount; ++_u) {
+              for (int _v : __nbr[_u]) {
+                value = cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]);
+                fwdCost += 0.5 * value * beta_t * per_bit_transit_cost * 300;
+              }
+            }
+          }
+        }
+      }
+    }
+    cout << "Traffic Forwarding Cost = " << fwdCost << endl;
+
 
     // Final output
     cout << endl << "========================================" << endl
