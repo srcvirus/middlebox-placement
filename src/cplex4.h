@@ -789,7 +789,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
     }
     */
     for (int m = 0; m < kMboxCount; ++m) {
-      energyCost += ym[m] * cmr[m][0] * per_core_cost;
+      energyCost += ym[m] * cmr[m][0] * per_core_cost * traffic_requests[0].duration;
     }
     objective += beta * energyCost;
     // add traffic forwarding cost
@@ -802,7 +802,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
           if (n2 > n1) {
             for (int _u = 0; _u < kSwitchCount; ++_u) {
               for (int _v : __nbr[_u]) {
-                forwardingCost += 0.001 * 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * beta_t * per_bit_transit_cost * 300;
+                forwardingCost += 0.001 * 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * beta_t * per_bit_transit_cost * traffic_requests[t].duration;
               }
             }
           }
@@ -971,7 +971,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
     cplex.getValues(ym, ym_vals);
     for (int m = 0; m < kMboxCount; ++m) {
       depCost += D_m[m] * ym_vals[m];
-      enrCost += ym_vals[m] * cmr[m][0] * per_core_cost * 300;
+      enrCost += ym_vals[m] * cmr[m][0] * per_core_cost * traffic_requests[0].duration;
     }
     cout << "Deployment Cost = " << depCost << endl;
     cout << "Energy Cost = " << enrCost << endl;
@@ -984,7 +984,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
             for (int _u = 0; _u < kSwitchCount; ++_u) {
               for (int _v : __nbr[_u]) {
                 value = cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]);
-                fwdCost += 0.5 * value * beta_t * per_bit_transit_cost * 300;
+                fwdCost += 0.001 * 0.5 * value * beta_t * per_bit_transit_cost * traffic_requests[t].duration;
               }
             }
           }
