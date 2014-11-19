@@ -802,7 +802,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
           if (n2 > n1) {
             for (int _u = 0; _u < kSwitchCount; ++_u) {
               for (int _v : __nbr[_u]) {
-                forwardingCost += 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * beta_t * per_bit_transit_cost * 300;
+                forwardingCost += 0.001 * 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * beta_t * per_bit_transit_cost * 300;
               }
             }
           }
