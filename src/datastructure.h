@@ -13,6 +13,15 @@
 #define MAXN 1000
 #define NIL -1
 
+#define NUM_CORES_PER_SERVER 6
+#define SERVER_IDLE_ENERGY  85
+#define SERVER_PEAK_ENERGY  36
+#define POWER_CONSUMPTION_ONE_SERVER(cores)                                    \
+  (SERVER_IDLE_ENERGY +                                                        \
+   (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) *                                 \
+       ((1.0 * (cores)) / (1.0 * (NUM_CORES_PER_SERVER))))
+#define PER_UNIT_ENERGY_PRICE 0.10
+
 struct middlebox {
   std::string middlebox_name;
   int cpu_requirement;
@@ -36,10 +45,10 @@ struct middlebox {
 };
 
 struct middlebox_instance {
-  const middlebox* m_box;
+  const middlebox *m_box;
   int residual_capacity;
-  middlebox_instance(const middlebox* m_box, int res_cap) : m_box(m_box),
-  residual_capacity(res_cap) { }
+  middlebox_instance(const middlebox *m_box, int res_cap)
+      : m_box(m_box), residual_capacity(res_cap) {}
 };
 
 struct traffic_class {
@@ -144,9 +153,8 @@ struct server_statistics {
   int timestamp;
   int server_id;
   double utilization;
-  server_statistics(int ts, int sid, double util) : timestamp(ts),
-                                                    server_id(sid), 
-                                                    utilization(util) {}
+  server_statistics(int ts, int sid, double util)
+      : timestamp(ts), server_id(sid), utilization(util) {}
 };
 
 // Statistics for the whole solution.
@@ -163,11 +171,11 @@ struct solution_statistics {
   std::vector<server_statistics> server_stats;
 };
 
-inline int GetNodeCount(const std::vector<std::vector<edge_endpoint> >& g) {
+inline int GetNodeCount(const std::vector<std::vector<edge_endpoint> > &g) {
   return g.size();
 }
 
-inline int GetEdgeCount(const std::vector<std::vector<edge_endpoint> >& g) {
+inline int GetEdgeCount(const std::vector<std::vector<edge_endpoint> > &g) {
   int edge_count = 0;
   for (int i = 0; i < g.size(); ++i) {
     edge_count += g[i].size();

@@ -97,8 +97,8 @@ int main(int argc, char *argv[]) {
         int v = k % 12;
         if (u == v)
           continue;
-        current_traffic[k] /= (10.0 * 5 * 300);
-        int max_latency = 2900 + (rand() % 200);
+        current_traffic[k] /= (10.0 * 300);
+        int max_latency = 290 + (rand() % 20);
         double penalty = 0.01;
         int traffic = current_traffic[k];
         if (traffic < 300)

@@ -67,31 +67,28 @@ void ProcessStats(solution_statistics& s,
   FILE* cost_ts_file = fopen(kCostTsFileName.c_str(), "w");
   int current_time = 0;
   std::vector<double> cost_data;
-  std::vector<double> global_cost_data;
+  // std::vector<double> global_cost_data;
+  double current_cost = 0.0;
   s.t_stats.push_back(traffic_statistics(INF, INF));
+
   // First write the time series data to file. For each time instance write the
-  // mean, 5th, and 95th percentile of cost.
+  // sum of costs from all traffic. 
   for (auto& t_stats : s.t_stats) {
     if (current_time != t_stats.arrival_time) {
-      double mean_cost = GetMean(cost_data);
-      double fifth_percentile_cost = GetNthPercentile(cost_data, 5);
-      double ninety_fifth_percentile_cost = GetNthPercentile(cost_data, 95);
-      fprintf(cost_ts_file, "%d %.3lf %.3lf %.3lf\n", current_time, mean_cost,
-              fifth_percentile_cost, ninety_fifth_percentile_cost);
+      cost_data.push_back(current_cost);
+      fprintf(cost_ts_file, "%d %.3lf\n", current_time, current_cost);
       current_time = t_stats.arrival_time;
-      cost_data.clear();
+      current_cost = 0.0;
     }
-    global_cost_data.push_back(t_stats.cost);
-    cost_data.push_back(t_stats.cost);
+    current_cost += t_stats.cost;
   }
   fclose(cost_ts_file);
   s.t_stats.pop_back();
-  global_cost_data.pop_back();
-
+  
   // Write the mean, 5th, and 95th percentile of the cost to file.
-  double mean_cost = GetMean(global_cost_data);
-  double fifth_percentile_cost = GetNthPercentile(global_cost_data, 5);
-  double ninety_fifth_percentile_cost = GetNthPercentile(global_cost_data, 95);
+  double mean_cost = GetMean(cost_data);
+  double fifth_percentile_cost = GetNthPercentile(cost_data, 5);
+  double ninety_fifth_percentile_cost = GetNthPercentile(cost_data, 95);
   FILE* cost_summary_file = fopen(kCostSummaryFileName.c_str(), "w");
   fprintf(cost_summary_file, "%.3lf %.3lf %.3lf\n", mean_cost,
           fifth_percentile_cost, ninety_fifth_percentile_cost);
