@@ -384,5 +384,4 @@ void UpdateResources(std::vector<int> *traffic_sequence,
     // ReduceNodeCapacity(traffic_sequence->at(i), m_box);
   }
 }
-
 #endif //  MIDDLEBOX_PLACEMENT_SRC_VITERBI_H_
