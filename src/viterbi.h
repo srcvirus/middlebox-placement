@@ -215,7 +215,7 @@ inline double GetEnergyCost(int current_node, const middlebox &m_box,
   int previously_used_cores = nodes[current_node].num_cores -
   nodes[current_node].residual_cores;
   int currently_used_cores = previously_used_cores + m_box.cpu_requirement;
-  double duration_hours = static_cast<double>(t_request.duration / 60.0);
+  double duration_hours = static_cast<double>(t_request.duration) / (60.0 * 60.0);
   double previous_cost = GetServerEnergyConsumption(previously_used_cores) *
                            duration_hours * PER_UNIT_ENERGY_PRICE;
   double current_cost = GetServerEnergyConsumption(currently_used_cores) *
