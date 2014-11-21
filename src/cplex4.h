@@ -335,9 +335,11 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         K_m[m] = INF;
       } else {
         D_m[m] = middleboxes[mboxType[m] - 2].deployment_cost;
+        cout << D_m[m] << " ";
         K_m[m] = middleboxes[mboxType[m] - 2].processing_capacity;
       }
     }
+    cout << endl;
 
     //////////CPLEX Variable//////////
     // amp = 1, if m is a middlebox of type p
@@ -788,8 +790,18 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
       }
     }
     */
+    /*
     for (int m = 0; m < kMboxCount; ++m) {
       energyCost += ym[m] * cmr[m][0] * per_core_cost * traffic_requests[0].duration;
+    }
+    */
+    for (int _n = 0; _n < kServerCount; ++_n) {
+      IloExpr consumedResource(env);
+      for(int m : mbox4server[_n]){
+        consumedResource += ym[m] * cmr[m][0];
+      }
+      energyCost += SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (consumedResource)) / (1.0 * (NUM_CORES_PER_SERVER)));
+      //c_nr[_n][0]
     }
     objective += beta * energyCost;
     // add traffic forwarding cost
@@ -969,10 +981,15 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
     IloNum enrCost = 0.0;
     IloNumArray ym_vals(env, kMboxCount);
     cplex.getValues(ym, ym_vals);
+    int mc = 0;
     for (int m = 0; m < kMboxCount; ++m) {
+      if (ym_vals[m] == 1){
+        mc++;
+      }
       depCost += D_m[m] * ym_vals[m];
       enrCost += ym_vals[m] * cmr[m][0] * per_core_cost * traffic_requests[0].duration;
     }
+    cout << "mc " << mc << endl;
     cout << "Deployment Cost = " << depCost << endl;
     cout << "Energy Cost = " << enrCost << endl;
     IloNum fwdCost = 0.0;

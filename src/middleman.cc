@@ -72,6 +72,7 @@ int main(int argc, char *argv[]) {
       current_traffic_requests.clear();
       fprintf(tFile, "%lf %lf\n", opex, running_time);
       fflush(tFile);
+      exit(0);
       //cout << "Done with one iteration" << endl;
       //int foo;
       //cin >> foo;
