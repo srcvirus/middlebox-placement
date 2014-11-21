@@ -146,6 +146,9 @@ struct traffic_statistics {
   // Energy cost of embedding the traffic request.
   double cost;
 
+  // Hop distance of each middlebox from the ingress and egress.
+  std::vector<int> ingress_hops, egress_hops;
+
   traffic_statistics(int a_time, double c) : arrival_time(a_time), cost(c) {}
 };
 

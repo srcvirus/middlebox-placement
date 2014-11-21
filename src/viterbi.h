@@ -363,6 +363,12 @@ ViterbiCompute(const traffic_request &t_request) {
   return_vector->push_back(t_request.source);
   std::reverse(return_vector->begin(), return_vector->end());
   return_vector->push_back(t_request.destination);
+  for (int i = 1; i < static_cast<int>(return_vector->size()) - 1; ++i) {
+    stats.t_stats.back().ingress_hops.push_back(ComputeShortestPath(t_request.source,
+    return_vector->at(i))->size() - 1);
+    stats.t_stats.back().egress_hops.push_back(ComputeShortestPath(return_vector->at(i),
+    t_request.destination)->size() - 1);
+  }
   return std::move(return_vector);
 }
 
