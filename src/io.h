@@ -29,7 +29,7 @@ inline int GetMiddleboxIndex(const std::string &middlebox_name) {
     }
   }
   DEBUG("Middlebox %s not found :(\n", middlebox_name.c_str());
-  return -1; // Not found.
+  return -1;  // Not found.
 }
 
 /*
@@ -42,8 +42,8 @@ inline int GetTrafficClassIndex(const std::string &traffic_class_name) {
 }
 */
 
-std::unique_ptr<std::vector<std::vector<std::string> > >
-ReadCSVFile(const char *filename) {
+std::unique_ptr<std::vector<std::vector<std::string> > > ReadCSVFile(
+    const char *filename) {
   DEBUG("[Parsing %s]\n", filename);
   FILE *file_ptr = fopen(filename, "r");
   const static int kBufferSize = 1024;
@@ -162,8 +162,7 @@ void InitializeTopology(const char *filename) {
   for (int k = 0; k < node_count; ++k) {
     for (int i = 0; i < node_count; ++i) {
       for (int j = 0; j < node_count; ++j) {
-        if (i == j)
-          continue;
+        if (i == j) continue;
         int relaxed_cost = shortest_path[i][k] + shortest_path[k][j];
         if (shortest_path[i][j] > relaxed_cost) {
           shortest_path[i][j] = relaxed_cost;
@@ -174,4 +173,4 @@ void InitializeTopology(const char *filename) {
   }
 }
 
-#endif // MIDDLEBOX_PLACEMENT_SRC_IO_H_
+#endif  // MIDDLEBOX_PLACEMENT_SRC_IO_H_

@@ -25,8 +25,7 @@ std::vector<traffic_request> traffic_requests;
 std::vector<node> nodes;
 std::vector<std::vector<edge_endpoint> > graph;
 std::vector<std::vector<middlebox_instance> > deployed_mboxes;
-std::vector<double> deployment_costs, energy_costs, transit_costs,
-sla_costs;
+std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs;
 double per_core_cost, per_bit_transit_cost;
 double cost[MAXN][MAXN];
 int pre[MAXN][MAXN];
@@ -62,12 +61,12 @@ int main(int argc, char *argv[]) {
     std::vector<traffic_request> current_traffic_requests;
     int current_time = traffic_requests[0].arrival_time;
     double opex, running_time;
-    //file to write opex and running time on each arrival time
-    FILE* tFile = fopen("time_opex_runtime", "w");
-    for (int i = 0; i < traffic_requests.size(); ) {
+    // file to write opex and running time on each arrival time
+    FILE *tFile = fopen("time_opex_runtime", "w");
+    for (int i = 0; i < traffic_requests.size();) {
       traffic_requests[i].duration = 300;
       fprintf(tFile, "%d ", current_time);
-      for (;current_time == traffic_requests[i].arrival_time; ++i) {
+      for (; current_time == traffic_requests[i].arrival_time; ++i) {
         current_traffic_requests.push_back(traffic_requests[i]);
       }
       current_time = traffic_requests[i].arrival_time;
@@ -75,9 +74,9 @@ int main(int argc, char *argv[]) {
       current_traffic_requests.clear();
       fprintf(tFile, "%lf %lf\n", opex, running_time);
       fflush(tFile);
-      //cout << "Done with one iteration" << endl;
-      //int foo;
-      //cin >> foo;
+      // cout << "Done with one iteration" << endl;
+      // int foo;
+      // cin >> foo;
     }
     fclose(tFile);
   } else if (algorithm == "viterbi") {
@@ -105,17 +104,28 @@ int main(int argc, char *argv[]) {
       double d_cost = 0.0, e_cost = 0.0, t_cost = 0.0, s_cost = 0.0;
       int prev_node = NIL, current_node = NIL;
       const int kLastIndex = static_cast<int>(result->size()) - 1;
+      resource resource_vector;
+      for (auto &node : nodes) {
+        resource_vector.cpu_cores.push_back(node.residual_cores);
+      }
       for (int kk = 1; kk < static_cast<int>(result->size()); ++kk) {
-        auto& m_box = middleboxes[traffic_requests[i].middlebox_sequence[kk - 1]];
+        auto &m_box =
+            middleboxes[traffic_requests[i].middlebox_sequence[kk - 1]];
         current_node = result->at(kk);
         prev_node = result->at(kk - 1);
         if (kk != kLastIndex)
           d_cost += GetDeploymentCost(current_node, m_box, traffic_requests[i]);
-        if (kk != kLastIndex) 
-          e_cost += GetEnergyCost(current_node, m_box, traffic_requests[i]);
+        if (kk != kLastIndex)
+          e_cost += GetEnergyCost(current_node, m_box, resource_vector,
+                                  traffic_requests[i]);
         t_cost += GetTransitCost(prev_node, current_node, traffic_requests[i]);
-        s_cost += GetSLAViolationCost(prev_node, current_node,
-                                      traffic_requests[i]);
+        s_cost +=
+            GetSLAViolationCost(prev_node, current_node, traffic_requests[i]);
+        if (kk != kLastIndex &&
+            UsedMiddleboxIndex(current_node, m_box, traffic_requests[i]) ==
+                NIL) {
+          resource_vector.cpu_cores[current_node] -= m_box.cpu_requirement;
+        }
       }
       deployment_costs.push_back(d_cost);
       energy_costs.push_back(e_cost);
@@ -136,7 +146,7 @@ int main(int argc, char *argv[]) {
       }
       all_results.push_back(std::move(result));
     }
-    
+
     // Print the solution time.
     printf("Solution time: %llu.%llus\n", elapsed_time / ONE_GIG,
            elapsed_time % ONE_GIG);
@@ -150,16 +160,15 @@ int main(int argc, char *argv[]) {
   }
 
   // DEBUG: Write all the computed sequences in a file.
-  FILE* all_results_file = fopen("log.sequences", "w");
+  FILE *all_results_file = fopen("log.sequences", "w");
   int row_index = 0;
-  for (auto& row : all_results) {
+  for (auto &row : all_results) {
     for (int i = 0; i < row->size(); ++i) {
       fprintf(all_results_file, " %d", row->at(i));
-      if ( i == 0 || i == row->size() - 1 ) continue;
-
+      if (i == 0 || i == row->size() - 1) continue;
     }
     double total_cost = deployment_costs[row_index] + energy_costs[row_index] +
-                          transit_costs[row_index] + sla_costs[row_index];
+                        transit_costs[row_index] + sla_costs[row_index];
     fprintf(all_results_file, " %.5lf %.5lf %.5lf %.5lf %.5lf\n",
             deployment_costs[row_index], energy_costs[row_index],
             transit_costs[row_index], sla_costs[row_index], total_cost);

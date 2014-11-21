@@ -14,11 +14,11 @@
 #define NIL -1
 
 #define NUM_CORES_PER_SERVER 6
-#define SERVER_IDLE_ENERGY  0.036  // Kilo Watt
-#define SERVER_PEAK_ENERGY  0.085  // Kilo Watt
-#define POWER_CONSUMPTION_ONE_SERVER(cores)                                    \
-  (SERVER_IDLE_ENERGY +                                                        \
-   (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) *                                 \
+#define SERVER_IDLE_ENERGY 0.036  // Kilo Watt
+#define SERVER_PEAK_ENERGY 0.085  // Kilo Watt
+#define POWER_CONSUMPTION_ONE_SERVER(cores)    \
+  (SERVER_IDLE_ENERGY +                        \
+   (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * \
        ((1.0 * (cores)) / (1.0 * (NUM_CORES_PER_SERVER))))
 #define PER_UNIT_ENERGY_PRICE 0.10
 
@@ -27,11 +27,12 @@ struct middlebox {
   int cpu_requirement;
   int processing_delay;
   int processing_capacity;
-  double deployment_cost; // Hourly cost of running a middlebox.
+  double deployment_cost;  // Hourly cost of running a middlebox.
   middlebox(const std::string &mb_name, const std::string &mb_cpu,
             const std::string &mb_delay, const std::string &mb_capacity,
             const std::string &mb_cost)
-      : middlebox_name(mb_name), cpu_requirement(atoi(mb_cpu.c_str())),
+      : middlebox_name(mb_name),
+        cpu_requirement(atoi(mb_cpu.c_str())),
         processing_delay(atoi(mb_delay.c_str())),
         processing_capacity(atoi(mb_capacity.c_str())),
         deployment_cost(atof(mb_cost.c_str())) {}
@@ -53,14 +54,15 @@ struct middlebox_instance {
 
 struct traffic_class {
   std::string class_name;
-  int min_bandwidth;    // In Mbps.
-  int max_delay;        // In miliseconds.
-  double delay_penalty; // Penalty for per 1 milisecond gurantee violation.
+  int min_bandwidth;     // In Mbps.
+  int max_delay;         // In miliseconds.
+  double delay_penalty;  // Penalty for per 1 milisecond gurantee violation.
   // double bw_penalty;  // Not used now. For future use.
   traffic_class(const std::string &tc_name, const std::string &tc_min_bandwidth,
                 const std::string &tc_max_delay,
                 const std::string &tc_delay_penalty)
-      : class_name(tc_name), min_bandwidth(atoi(tc_min_bandwidth.c_str())),
+      : class_name(tc_name),
+        min_bandwidth(atoi(tc_min_bandwidth.c_str())),
         max_delay(atoi(tc_max_delay.c_str())),
         delay_penalty(atof(tc_delay_penalty.c_str())) {}
   std::string GetDebugString() {
@@ -95,7 +97,8 @@ struct traffic_request {
                   const std::string &tr_delay_penalty,
                   const std::vector<int> &tr_mbox_seq)
       : arrival_time(atoi(tr_arrival_time.c_str())),
-        source(atoi(tr_source.c_str())), destination(atoi(tr_dest.c_str())),
+        source(atoi(tr_source.c_str())),
+        destination(atoi(tr_dest.c_str())),
         min_bandwidth(atoi(tr_min_bandwidth.c_str())),
         max_delay(atoi(tr_max_delay.c_str())),
         delay_penalty(atof(tr_delay_penalty.c_str())),
@@ -148,7 +151,7 @@ struct traffic_statistics {
 
   // Hop distance of each middlebox from the ingress and egress.
   std::vector<int> ingress_hops, egress_hops;
-  
+
   // Ratio of embedded path length and shortest path route length
   double stretch;
   traffic_statistics(int a_time, double c) : arrival_time(a_time), cost(c) {}
@@ -203,4 +206,4 @@ extern double per_core_cost, per_bit_transit_cost;
 extern double cost[MAXN][MAXN];
 extern int pre[MAXN][MAXN];
 extern int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
-#endif // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
+#endif  // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
