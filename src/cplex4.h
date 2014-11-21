@@ -795,12 +795,17 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
       energyCost += ym[m] * cmr[m][0] * per_core_cost * traffic_requests[0].duration;
     }
     */
+    IloNum duration_hours = 1.0 * traffic_requests[0].duration / (60.0 * 60.0);
     for (int _n = 0; _n < kServerCount; ++_n) {
       IloExpr consumedResource(env);
       for(int m : mbox4server[_n]){
+        if (mboxType[m] == 0 || mboxType[m] == 1) {
+          continue;
+        }
         consumedResource += ym[m] * cmr[m][0];
       }
-      energyCost += SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (consumedResource)) / (1.0 * (NUM_CORES_PER_SERVER)));
+      energyCost += (SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (consumedResource)) / (1.0 * (NUM_CORES_PER_SERVER)))) 
+                    * duration_hours * PER_UNIT_ENERGY_PRICE;
       //c_nr[_n][0]
     }
     objective += beta * energyCost;
@@ -987,7 +992,18 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         mc++;
       }
       depCost += D_m[m] * ym_vals[m];
-      enrCost += ym_vals[m] * cmr[m][0] * per_core_cost * traffic_requests[0].duration;
+    }
+    for (int _n = 0; _n < kServerCount; ++_n) {
+      int used_cpu;
+      for(int m : mbox4server[_n]){
+        if (mboxType[m] == 0 || mboxType[m] == 1) {
+          continue;
+        }
+        used_cpu += ym_vals[m] * cmr[m][0];
+      }
+      enrCost += (SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (used_cpu)) / (1.0 * (NUM_CORES_PER_SERVER)))) 
+                    * duration_hours * PER_UNIT_ENERGY_PRICE;
+      //c_nr[_n][0]
     }
     cout << "mc " << mc << endl;
     cout << "Deployment Cost = " << depCost << endl;
