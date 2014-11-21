@@ -215,7 +215,7 @@ inline double GetEnergyCost(int current_node, const middlebox &m_box,
   int previously_used_cores = nodes[current_node].num_cores -
   nodes[current_node].residual_cores;
   int currently_used_cores = previously_used_cores + m_box.cpu_requirement;
-  double duration_hours = static_cast<double>(t_request.duration / 60.0);
+  double duration_hours = static_cast<double>(t_request.duration) / (60.0 * 60.0);
   double previous_cost = GetServerEnergyConsumption(previously_used_cores) *
                            duration_hours * PER_UNIT_ENERGY_PRICE;
   double current_cost = GetServerEnergyConsumption(currently_used_cores) *
@@ -363,6 +363,12 @@ ViterbiCompute(const traffic_request &t_request) {
   return_vector->push_back(t_request.source);
   std::reverse(return_vector->begin(), return_vector->end());
   return_vector->push_back(t_request.destination);
+  for (int i = 1; i < static_cast<int>(return_vector->size()) - 1; ++i) {
+    stats.t_stats.back().ingress_hops.push_back(ComputeShortestPath(t_request.source,
+    return_vector->at(i))->size() - 1);
+    stats.t_stats.back().egress_hops.push_back(ComputeShortestPath(return_vector->at(i),
+    t_request.destination)->size() - 1);
+  }
   return std::move(return_vector);
 }
 
@@ -384,5 +390,4 @@ void UpdateResources(std::vector<int> *traffic_sequence,
     // ReduceNodeCapacity(traffic_sequence->at(i), m_box);
   }
 }
-
 #endif //  MIDDLEBOX_PLACEMENT_SRC_VITERBI_H_

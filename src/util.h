@@ -162,5 +162,37 @@ void ProcessStats(solution_statistics& s,
     fprintf(server_util_cdf_file, "%.3lf %.3lf\n", util, cdf);
   }
   fclose(server_util_cdf_file);
+
+  // Percentage of middleboxes deployed withing k distance of the ingress/egress
+  const std::string kIngressK = output_file_prefix + ".ingress.k";
+  const std::string kEgressK = output_file_prefix + ".egress.k";
+  FILE* ingress_k_cdf_file = fopen(kIngressK.c_str(), "w");
+  FILE* egress_k_cdf_file = fopen(kEgressK.c_str(), "w");
+  std::vector<int> ingress_k(graph.size() + 1, 0);
+  std::vector<int> egress_k(graph.size() + 1, 0);
+  int num_elements = 0;
+  for (auto& t_stats : s.t_stats) {
+    num_elements += t_stats.ingress_hops.size();
+    for (auto& hops : t_stats.ingress_hops) {
+      ingress_k[hops]++;
+    }
+    for (auto& hops : t_stats.egress_hops) {
+      egress_k[hops]++;
+    }
+  }
+  for (int i = 1; i <= graph.size(); ++i) {
+    ingress_k[i] += ingress_k[i - 1];
+    egress_k[i] += egress_k[i - 1];
+  }
+  for (int i = 0; i <= graph.size(); ++i) {
+    double cdf = static_cast<double>(ingress_k[i]) /
+                  static_cast<double>(num_elements);
+    fprintf(ingress_k_cdf_file, "%d %.3lf\n", i, cdf);
+    cdf = static_cast<double>(egress_k[i]) /
+            static_cast<double>(num_elements);
+    fprintf(egress_k_cdf_file, "%d %.3lf\n", i, cdf);
+  }
+  fclose(ingress_k_cdf_file);
+  fclose(egress_k_cdf_file);
 }
 #endif  // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
