@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     }
     double total_cost = deployment_costs[row_index] + energy_costs[row_index] +
                           transit_costs[row_index] + sla_costs[row_index];
-    fprintf(all_results_file, " %.3lf %.3lf %.3lf %.3lf %.3lf\n",
+    fprintf(all_results_file, " %.5lf %.5lf %.5lf %.5lf %.5lf\n",
             deployment_costs[row_index], energy_costs[row_index],
             transit_costs[row_index], sla_costs[row_index], total_cost);
     ++row_index;

@@ -14,8 +14,8 @@
 #define NIL -1
 
 #define NUM_CORES_PER_SERVER 6
-#define SERVER_IDLE_ENERGY  36 
-#define SERVER_PEAK_ENERGY  85
+#define SERVER_IDLE_ENERGY  0.036  // Kilo Watt
+#define SERVER_PEAK_ENERGY  0.085  // Kilo Watt
 #define POWER_CONSUMPTION_ONE_SERVER(cores)                                    \
   (SERVER_IDLE_ENERGY +                                                        \
    (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) *                                 \
@@ -148,7 +148,9 @@ struct traffic_statistics {
 
   // Hop distance of each middlebox from the ingress and egress.
   std::vector<int> ingress_hops, egress_hops;
-
+  
+  // Ratio of embedded path length and shortest path route length
+  double stretch;
   traffic_statistics(int a_time, double c) : arrival_time(a_time), cost(c) {}
 };
 
