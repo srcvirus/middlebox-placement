@@ -48,7 +48,7 @@ void print_IloInt3dArray(IloInt3dArray a, int dimension1, int dimension2,
   }
 }
 
-void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, double &running_time){
+void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, double &running_time, string filename){
 
   IloEnv env;
   try {
@@ -69,7 +69,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
     int kSwitchCount = 0, kLinkCount = 0, kServerCount = 0, kResourceCount = 0;
 
     // read topology file and populate associated variables
-    FILE *topology_file = fopen("topology", "r");
+    FILE *topology_file = fopen(filename.c_str(), "r");
 
     // read switch and link count
     fscanf(topology_file, "%d %d", &kSwitchCount, &kLinkCount);
@@ -271,6 +271,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
       for (int m : mbox4server[_n]) {
 
         int _u = switch4server[_n];
+        cout << "Server " << _n << " Switch " << _u << endl;
         int _v = seed++; // label for pseudo switch
 
         beta_u_v[_u][_v] = INF;
@@ -841,7 +842,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
                 delay += 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * delta_u_v[_u][_v];
               }
             }
-            penalty += (delay - tr.max_delay) * tr.delay_penalty;
+            penalty += ( (delay - tr.max_delay) + IloAbs(delay - tr.max_delay) )/2.0  * tr.delay_penalty;
           }
         }
       }
@@ -905,13 +906,12 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         for (int m = 0; m < kMboxCount; ++m) {
           if (xtnm_vals[m] == 1) {
             result[t].push_back(pseudo2actual[switch4mbox[m]]);
-            //cout << "Traffic " << t << " node " << n << " provisioned on middlebox " << m << endl;
+            cout << "Traffic " << t << " node " << n << " provisioned on middlebox " << m << endl;
           }
         }
       }
     }
 
-    /*
     // print ym
     cout << endl;
     IloNumArray ym_vals(env, kMboxCount);
@@ -933,8 +933,6 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
              << sw << endl;
       }
     }
-    */
-    /*
     // print ztn_n
     cout << endl;
     for (int t = 0; t < kTrafficCount; ++t) {
@@ -951,8 +949,6 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         }
       }
     }
-    */
-    /*
     cout << endl;
     for (int t = 0; t < kTrafficCount; ++t) {
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
@@ -980,18 +976,17 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         }
       }
     }
-    */
 
     IloNum depCost = 0.0;
     IloNum enrCost = 0.0;
-    IloNumArray ym_vals(env, kMboxCount);
-    cplex.getValues(ym, ym_vals);
+    IloNumArray ym_vals2(env, kMboxCount);
+    cplex.getValues(ym, ym_vals2);
     int mc = 0;
     for (int m = 0; m < kMboxCount; ++m) {
-      if (ym_vals[m] == 1){
+      if (ym_vals2[m] == 1){
         mc++;
       }
-      depCost += D_m[m] * ym_vals[m];
+      depCost += D_m[m] * ym_vals2[m];
     }
     for (int _n = 0; _n < kServerCount; ++_n) {
       int used_cpu;
@@ -999,7 +994,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
         if (mboxType[m] == 0 || mboxType[m] == 1) {
           continue;
         }
-        used_cpu += ym_vals[m] * cmr[m][0];
+        used_cpu += ym_vals2[m] * cmr[m][0];
       }
       enrCost += (SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (used_cpu)) / (1.0 * (NUM_CORES_PER_SERVER)))) 
                     * duration_hours * PER_UNIT_ENERGY_PRICE;
@@ -1025,7 +1020,25 @@ void run_cplex(std::vector<traffic_request> traffic_requests, double &opex, doub
       }
     }
     cout << "Traffic Forwarding Cost = " << fwdCost << endl;
-
+    double pnlty = 0.0;
+    for (int t = 0, beta; t < kTrafficCount; ++t) {
+      traffic_request tr = traffic_requests[t];
+      beta = tr.min_bandwidth;
+      for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
+        for (int n2 : nbr[t][n1]) {
+          if (n1 < n2) {
+            double delay = 0.0;
+            for (int _u = 0; _u < kSwitchCount; ++_u) {
+              for (int _v : __nbr[_u]) {
+                delay += 0.5 * cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]) * delta_u_v[_u][_v];
+              }
+            }
+            pnlty += ( (delay - tr.max_delay) + abs(delay - tr.max_delay) )/2.0 * tr.delay_penalty;
+          }
+        }
+      }
+    }
+    cout << "SLA Cost = " << pnlty << endl;
 
     // Final output
     cout << endl << "========================================" << endl

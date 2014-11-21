@@ -42,12 +42,14 @@ int main(int argc, char *argv[]) {
   }
   auto arg_maps = ParseArgs(argc, argv);
   string algorithm;
+  string topology_filename;
   for (auto argument : *arg_maps) {
     if (argument.first == "--per_core_cost") {
       per_core_cost = atof(argument.second.c_str());
     } else if (argument.first == "--per_bit_transit_cost") {
       per_bit_transit_cost = atof(argument.second.c_str());
     } else if (argument.first == "--topology_file") {
+      topology_filename = argument.second;
       InitializeTopology(argument.second.c_str());
     } else if (argument.first == "--middlebox_spec_file") {
       InitializeMiddleboxes(argument.second.c_str());
@@ -71,7 +73,7 @@ int main(int argc, char *argv[]) {
         current_traffic_requests.push_back(traffic_requests[i]);
       }
       current_time = traffic_requests[i].arrival_time;
-      run_cplex(current_traffic_requests, opex, running_time);
+      run_cplex(current_traffic_requests, opex, running_time, topology_filename);
       current_traffic_requests.clear();
       fprintf(tFile, "%lf %lf\n", opex, running_time);
       fflush(tFile);
