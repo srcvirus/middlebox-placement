@@ -200,7 +200,7 @@ double GetServerEnergyConsumption(int num_cores_used) {
   SERVER_PEAK_ENERGY);
   int residual_cores = num_cores_used % NUM_CORES_PER_SERVER;
   energy_consumed += POWER_CONSUMPTION_ONE_SERVER(num_cores_used);
-  return energy_consumed / 1000.0;
+  return energy_consumed ;
 }
 
 inline double GetEnergyCost(int current_node, const middlebox &m_box,
@@ -374,11 +374,18 @@ ViterbiCompute(const traffic_request &t_request) {
 
 void UpdateResources(std::vector<int> *traffic_sequence,
                      const traffic_request &t_request) {
+  int shortest_path_length = ComputeShortestPath(t_request.source,
+  t_request.destination)->size() - 1;
+  int embedded_path_length = 0;
   for (int i = 0; i < static_cast<int>(traffic_sequence->size()) - 1; ++i) {
     ReducePathResidualBandwidth(traffic_sequence->at(i),
                                 traffic_sequence->at(i + 1),
                                 t_request.min_bandwidth);
+    embedded_path_length += ComputeShortestPath(traffic_sequence->at(i),
+    traffic_sequence->at(i + 1))->size() - 1;
   }
+  stats.t_stats.back().stretch = static_cast<double>(embedded_path_length) /
+  static_cast<double>(shortest_path_length);
   for (int i = 1; i < static_cast<int>(traffic_sequence->size()) - 1; ++i) {
     // for (int i = 0; i < t_request.middlebox_sequence.size(); ++i) {
     //  DEBUG("i = %d, t_request.middlebox_sequence.size() = %d,"

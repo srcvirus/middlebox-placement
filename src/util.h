@@ -194,5 +194,27 @@ void ProcessStats(solution_statistics& s,
   }
   fclose(ingress_k_cdf_file);
   fclose(egress_k_cdf_file);
+
+  // Process stretch data.
+  const std::string kStretchFileName = output_file_prefix + ".stretch.cdf";
+  FILE* stretch_file = fopen(kStretchFileName.c_str(), "w");
+  const int kNumTraffic = s.t_stats.size();
+  double max_stretch = -1;
+  for (auto& t_stats : s.t_stats) {
+    if (max_stretch < t_stats.stretch)
+      max_stretch = t_stats.stretch;
+  }
+  std::vector<int> stretch_cdf(static_cast<int>(max_stretch * 100.0), 0.0);
+  for (auto& t_stats : s.t_stats) {
+    ++stretch_cdf[static_cast<int>(t_stats.stretch * 100.0)];
+  }
+  for (int i = 1; i < stretch_cdf.size(); ++i) {
+    stretch_cdf[i] += stretch_cdf[i - 1];
+    double I = static_cast<double>(i) / 100.0;
+    double cdf = static_cast<double>(stretch_cdf[i]) /
+    static_cast<double>(kNumTraffic);
+    fprintf(stretch_file, "%.3lf %.3lf\n", I, cdf);
+  }
+  fclose(stretch_file);
 }
 #endif  // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
