@@ -63,25 +63,62 @@ int main(int argc, char *argv[]) {
     std::vector<traffic_request> current_traffic_requests;
     int current_time = traffic_requests[0].arrival_time;
     double opex, running_time;
-    // file to write opex and running time on each arrival time
-    FILE *tFile = fopen("time_opex_runtime", "w");
+
+    // files to write output
+    FILE *cost_log_file = fopen("log.cplex.cost.ts", "w");
+    FILE *sequence_log_file = fopen("log.cplex.sequences", "w");
+    FILE *util_log_file = fopen("log.cplex.util.ts", "w");
+
     for (int i = 0; i < traffic_requests.size();) {
       traffic_requests[i].duration = 300;
-      fprintf(tFile, "%d ", current_time);
+
+      fprintf(cost_log_file, "%d ", current_time);
+      fprintf(util_log_file, "%d ", current_time);
+
       for (;i < traffic_requests.size() && current_time == traffic_requests[i].arrival_time; ++i) {
         current_traffic_requests.push_back(traffic_requests[i]);
       }
       current_time = traffic_requests[i].arrival_time;
-      run_cplex(current_traffic_requests, opex, running_time, topology_filename);
+      
+      std::vector<int> sequence[current_traffic_requests.size()];
+      std::vector<double> opex_breakdown;
+      std::vector<int> utilization;
+      
+      run_cplex(current_traffic_requests, opex, opex_breakdown, 
+                running_time, sequence, utilization, topology_filename);
+      
+      //cost log
+      for (double cost : opex_breakdown) {
+        fprintf(cost_log_file, "%lf ", cost);
+      }
+      fprintf(cost_log_file, "%lf %lf\n", opex, running_time);
+
+      //sequence log
+      for (auto seq : sequence) {
+        for (int sw : seq) {
+          fprintf(sequence_log_file, "%d ", sw);
+        }
+        fprintf(sequence_log_file, "\n");
+      }
+
+      //utilization log
+      for (int cores : utilization) {
+        fprintf(util_log_file, "%d ", cores);
+      }
+      fprintf(util_log_file, "\n");
+
+      fflush(cost_log_file);
+      fflush(sequence_log_file);  
+      fflush(util_log_file);    
+
       current_traffic_requests.clear();
-      fprintf(tFile, "%lf %lf\n", opex, running_time);
-      fflush(tFile);
       exit(0);
-      //cout << "Done with one iteration" << endl;
-      //int foo;
-      //cin >> foo;
     }
-    fclose(tFile);
+
+    //close all the output files
+    fclose(cost_log_file);
+
+
   } else if (algorithm == "viterbi") {
     int current_time = traffic_requests[0].arrival_time;
     unsigned long long elapsed_time = 0;
