@@ -116,12 +116,13 @@ int main(int argc, char *argv[]) {
       fflush(util_log_file);    
 
       current_traffic_requests.clear();
-      exit(0);
+      //exit(0);
     }
 
     //close all the output files
     fclose(cost_log_file);
-
+    fclose(sequence_log_file);
+    fclose(util_log_file);
 
   } else if (algorithm == "viterbi") {
     int current_time = traffic_requests[0].arrival_time;
