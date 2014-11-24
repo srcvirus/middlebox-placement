@@ -80,9 +80,27 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // ingress and egress middleboxes are deployed on special non-existent
     // servers
     kServerCount += kSwitchCount;  // these are the special ones
-    kServerCount += kSwitchCount;  // TODO: read from file, current assumption:
-                                   // there is one server per switch
     kResourceCount = 1;            // TODO: Read from file
+
+    // read the switches, servers and resource capacity
+    // TODO: need to change the topology file to include information about
+    // servers
+
+    // read the switch info from file version 2
+    std::vector<int> switchCPU;
+    for (int i = 0, sw, cpu, server_count; i < kSwitchCount; ++i) {
+      fscanf(topology_file, "%d %d", &sw, &cpu);
+      //_z_s_n[sw][sw] = 1;  // for the special ones
+      //switch4server[i] = i;
+      //server4switch[i].push_back(i);
+      //c_nr[sw][0] = 0;
+
+      //connect small servers to switch
+      server_count = cpu/NUM_CORES_PER_SERVER;
+      cout << "server # " << server_count << endl;
+      kServerCount += server_count;
+      switchCPU.push_back(cpu);
+    }
 
     // Declare the required DSs
     std::vector<int> _nbr[kSwitchCount];
@@ -91,10 +109,6 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     int _beta[kSwitchCount][kSwitchCount];
     int _delta[kSwitchCount][kSwitchCount];
     int max_beta = 0, max_delta = 0;
-
-    // read the switches, servers and resource capacity
-    // TODO: need to change the topology file to include information about
-    // servers
 
     //////////CPLEX Variable//////////
     //_z_s_n = 1, iff _n is attached to _s
@@ -117,12 +131,21 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
 
+    for (int i = 0; i < kSwitchCount; ++i) {
+      _z_s_n[i][i] = 1;
+      c_nr[i][0] = 0;
+      switch4server[i] = i;
+      server4switch[i].push_back(i);
+    }
+
+    /*
     // read the switch info from file
+    kServerCount += kSwitchCount;  // TODO: read from file, current assumption:
+                                   // there is one server per switch
     for (int i = 0, sw, cpu; i < kSwitchCount; ++i) {
       fscanf(topology_file, "%d %d", &sw, &cpu);
       _z_s_n[sw][sw] = 1;  // for the special ones
-      _z_s_n[sw][sw + kSwitchCount] =
-          1;  // these is where we deploy normal middleboxes
+      _z_s_n[sw][sw + kSwitchCount] = 1;  // these is where we deploy normal middleboxes
 
       switch4server[i] = i;
       switch4server[i + kSwitchCount] = i;
@@ -131,6 +154,22 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
 
       c_nr[sw][0] = 0;
       c_nr[sw + kSwitchCount][0] = cpu;
+      // TODO: reflect changes if server and resource info changed
+    }
+    // print_IloInt2dArray(_z_s_n, kSwitchCount, kServerCount, "_z_s_n");
+    // print_IloInt2dArray(c_nr, kServerCount, kResourceCount, "c_nr");
+    */
+
+    int serverIndex = kSwitchCount;
+    for (int i = 0, server_count; i < kSwitchCount; ++i) {
+      server_count = switchCPU[i]/NUM_CORES_PER_SERVER;
+      for (int j = 0; j < server_count; ++j) {
+        _z_s_n[i][serverIndex] = 1; //normal servers
+        switch4server[serverIndex] = i;
+        server4switch[i].push_back(serverIndex);
+        c_nr[serverIndex][0] = NUM_CORES_PER_SERVER;
+        serverIndex++;
+      }
       // TODO: reflect changes if server and resource info changed
     }
     // print_IloInt2dArray(_z_s_n, kSwitchCount, kServerCount, "_z_s_n");
@@ -333,17 +372,21 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     //////////CPLEX Variable//////////
     // D_m = R+, is the deployment cost of m
     // K_m = R+, is the processing capacity of m
+    //delat_m = R+, is the processing delay of m
     IloIntArray D_m(env, kMboxCount);
     IloIntArray K_m(env, kMboxCount);
+    IloIntArray delta_m(env, kMboxCount);
     // initialize D_m
     for (int m = 0; m < kMboxCount; ++m) {
       if (mboxType[m] == 0 || mboxType[m] == 1) {
         D_m[m] = 0;
         K_m[m] = INF;
+        delta_m[m] = 0;
       } else {
         D_m[m] = middleboxes[mboxType[m] - 2].deployment_cost;
         //cout << D_m[m] << " ";
         K_m[m] = middleboxes[mboxType[m] - 2].processing_capacity;
+        delta_m[m] = middleboxes[mboxType[m] - 2].processing_delay;
       }
     }
     //cout << endl;
@@ -458,6 +501,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       lastNodeNbr.push_back(traffic_requests[t].middlebox_sequence.size());
       nbr[t].push_back(lastNodeNbr);
     }
+    //cout << "modeling done" << endl;
+    
 
     //////////CPLEX Variable//////////
     // gtnp = 1, if n-th node of traffic t is a middlebox of type p
@@ -472,6 +517,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     // print_IloInt3dArray(gtnp, kTrafficCount, 5, kMboxTypes, "gtnp");
+    //cout << "gtnp done" << endl;
 
     //////////CPLEX Variable//////////
     // bar_xtnm = 1, if currently n-th node of traffic t is passing through m
@@ -486,6 +532,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     // TODO: read the previous configuration from file
+    //cout << "hat_x done" << endl;
 
     //^^^^^CPLEX Decision Variable^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     // DECISION VAR: xtnm = 1, if n-th node of traffic t will pass through m
@@ -497,6 +544,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //cout << "x done" << endl;
 
     //////////CPLEX Variable//////////
     // ztn_n = 1, if node n of traffic t is provisioned on phy. node _n
@@ -507,6 +555,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         ztn_n[t][n] = IloIntVarArray(env, kSwitchCount, 0, 1);
       }
     }
+    //cout << "z done" << endl;
 
     // DECISION VAR: ftl_l = R+, amount of bandwidth allocate to link l of
     // traffic t on phy. link _l
@@ -557,6 +606,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       model.add(IloIfThen(env, ym[m] == 1, sum > 0));
     }
     //---------------------------------------------------------------------
+    //cout << "cnst ym" << endl;
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: constraint for ztn_n
@@ -585,6 +635,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     //---------------------------------------------------------------------
+    //cout << "cnst z" << endl;
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: old traffic constraint
@@ -597,6 +648,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     //---------------------------------------------------------------------
+    //cout << "cnst old traffic" << endl;
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: ingress & egress constraint
@@ -611,6 +663,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     //---------------------------------------------------------------------
+    //cout << "cnst ingress egress" << endl;
 
     //^^^^^CPLEX Decision Variable^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     // wtuv_u_v = 1, if logical link (u, v) of traffic t uses physical link (_u,
@@ -629,6 +682,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //cout << "w done" << endl;
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: physical link capacity constraint
@@ -653,6 +707,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     //---------------------------------------------------------------------
+    //cout << "cnst physical link" << endl;
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: flow constraint
@@ -696,6 +751,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     */
     //---------------------------------------------------------------------
+    //cout << "cnst flow" << endl;
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: middlebox processing capacity constraint
@@ -711,6 +767,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       model.add(IloIfThen(env, (ym[m] == 1), (sum <= K_m[m])));
     }
     //---------------------------------------------------------------------
+    //cout << "cnst middlebox processing" << endl;
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: every traffic should be embedded
@@ -725,6 +782,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     //---------------------------------------------------------------------
+    //cout << "cnsr every traffic" << endl;
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: every middlebox in use should be embedded -- removed
@@ -750,6 +808,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     //---------------------------------------------------------------------
+    //cout << "cnst every middlebox" << endl;
 
     /*
     //ADD: a middlebox without traffic should not be deployed
@@ -834,22 +893,29 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     objective += gamma * forwardingCost;
     // add penalty for SLA vilations
     IloExpr penalty(env);
-    for (int t = 0, beta; t < kTrafficCount; ++t) {
+    for (int t = 0; t < kTrafficCount; ++t) {
       traffic_request tr = traffic_requests[t];
-      beta = tr.min_bandwidth;
+      IloExpr delay(env);
+      //link delay
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
         for (int n2 : nbr[t][n1]) {
           if (n1 < n2) {
-            IloExpr delay(env);
+            //link delay
             for (int _u = 0; _u < kSwitchCount; ++_u) {
               for (int _v : __nbr[_u]) {
                 delay += 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * delta_u_v[_u][_v];
               }
             }
-            penalty += ( (delay - tr.max_delay) + IloAbs(delay - tr.max_delay) )/2.0  * tr.delay_penalty;
           }
         }
       }
+      //middlebox processing delay
+      for (int n = 0; n < trafficNodeCount[t]; ++n) {
+        for (int m = 0; m < kMboxCount; ++m) {
+          delay += xtnm[t][n][m] * delta_m[m];
+        }
+      }
+      penalty += ( (delay - tr.max_delay) + IloAbs(delay - tr.max_delay) )/2.0  * tr.delay_penalty;
     }
     objective += lambda * penalty;
 
@@ -1020,22 +1086,30 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     //cout << "Traffic Forwarding Cost = " << fwdCost << endl;
 
     double pnlty = 0.0;
-    for (int t = 0, beta; t < kTrafficCount; ++t) {
+    for (int t = 0; t < kTrafficCount; ++t) {
       traffic_request tr = traffic_requests[t];
-      beta = tr.min_bandwidth;
+      double delay = 0.0;
+      //link delay
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
         for (int n2 : nbr[t][n1]) {
           if (n1 < n2) {
-            double delay = 0.0;
             for (int _u = 0; _u < kSwitchCount; ++_u) {
               for (int _v : __nbr[_u]) {
                 delay += 0.5 * cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]) * delta_u_v[_u][_v];
               }
             }
-            pnlty += ( (delay - tr.max_delay) + abs(delay - tr.max_delay) )/2.0 * tr.delay_penalty;
           }
         }
       }
+      //middlebox processing delay
+      for (int n = 0; n < trafficNodeCount[t]; ++n) {
+        for (int m = 0; m < kMboxCount; ++m) {
+          delay += cplex.getValue(xtnm[t][n][m]) * delta_m[m];
+          if (cplex.getValue(xtnm[t][n][m] == 1))
+            cout << "t = " << t << " n = " << n << " delay " << delay << endl;
+        }
+      }
+      pnlty += ( (delay - tr.max_delay) + abs(delay - tr.max_delay) )/2.0 * tr.delay_penalty;
     }
     opex_breakdown.push_back(pnlty);
     //cout << "SLA Cost = " << pnlty << endl;
