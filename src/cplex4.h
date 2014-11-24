@@ -78,12 +78,15 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // ingress and egress middleboxes are deployed on special non-existent
     // servers
     kServerCount += kSwitchCount;  // these are the special ones
+    kServerCount += kSwitchCount;  // TODO: read from file, current assumption:
+                                   // there is one server per switch
     kResourceCount = 1;            // TODO: Read from file
 
     // read the switches, servers and resource capacity
     // TODO: need to change the topology file to include information about
     // servers
 
+    /*
     // read the switch info from file version 2
     std::vector<int> switchCPU;
     for (int i = 0, sw, cpu, server_count; i < kSwitchCount; ++i) {
@@ -99,6 +102,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       kServerCount += server_count;
       switchCPU.push_back(cpu);
     }
+    */
 
     // Declare the required DSs
     std::vector<int> _nbr[kSwitchCount];
@@ -129,17 +133,17 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
 
+    /*
+    // read the switch info from file version 2
     for (int i = 0; i < kSwitchCount; ++i) {
       _z_s_n[i][i] = 1;
       c_nr[i][0] = 0;
       switch4server[i] = i;
       server4switch[i].push_back(i);
     }
+    */
 
-    /*
     // read the switch info from file
-    kServerCount += kSwitchCount;  // TODO: read from file, current assumption:
-                                   // there is one server per switch
     for (int i = 0, sw, cpu; i < kSwitchCount; ++i) {
       fscanf(topology_file, "%d %d", &sw, &cpu);
       _z_s_n[sw][sw] = 1;  // for the special ones
@@ -156,8 +160,9 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     // print_IloInt2dArray(_z_s_n, kSwitchCount, kServerCount, "_z_s_n");
     // print_IloInt2dArray(c_nr, kServerCount, kResourceCount, "c_nr");
-    */
 
+    /*
+    // read the switch info from file version 2
     int serverIndex = kSwitchCount;
     for (int i = 0, server_count; i < kSwitchCount; ++i) {
       server_count = switchCPU[i]/NUM_CORES_PER_SERVER;
@@ -172,6 +177,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     // print_IloInt2dArray(_z_s_n, kSwitchCount, kServerCount, "_z_s_n");
     // print_IloInt2dArray(c_nr, kServerCount, kResourceCount, "c_nr");
+    */
 
     // initialize _beta & _delta to remove any garbage value
     for (int _u = 0; _u < kSwitchCount; ++_u) {
