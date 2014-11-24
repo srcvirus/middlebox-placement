@@ -14,7 +14,7 @@
 #define NIL -1
 
 #define NUM_CORES_PER_SERVER 16
-#define SERVER_IDLE_ENERGY 0.47  // Kilo Watt
+#define SERVER_IDLE_ENERGY 0.047  // Kilo Watt
 #define SERVER_PEAK_ENERGY 0.135  // Kilo Watt
 #define POWER_CONSUMPTION_ONE_SERVER(cores)    \
   (SERVER_IDLE_ENERGY +                        \
@@ -201,6 +201,8 @@ extern std::vector<std::vector<edge_endpoint> > graph;
 extern std::vector<std::vector<middlebox_instance> > deployed_mboxes;
 extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > >
     path_cache;
+extern std::vector<double> deployment_costs, energy_costs, 
+       transit_costs, sla_costs;
 extern solution_statistics stats;
 extern double per_core_cost, per_bit_transit_cost;
 extern double cost[MAXN][MAXN];

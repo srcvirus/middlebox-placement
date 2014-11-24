@@ -165,8 +165,8 @@ int main(int argc, char *argv[]) {
           e_cost += GetEnergyCost(current_node, m_box, resource_vector,
                                   traffic_requests[i]);
         t_cost += GetTransitCost(prev_node, current_node, traffic_requests[i]);
-        s_cost +=
-            GetSLAViolationCost(prev_node, current_node, traffic_requests[i]);
+        // s_cost +=
+        //    GetSLAViolationCost(prev_node, current_node, traffic_requests[i]);
         if (kk != kLastIndex &&
             UsedMiddleboxIndex(current_node, m_box, traffic_requests[i]) ==
                 NIL) {
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
       deployment_costs.push_back(d_cost);
       energy_costs.push_back(e_cost);
       transit_costs.push_back(t_cost);
-      sla_costs.push_back(s_cost);
+      // sla_costs.push_back(s_cost);
 
       // Update the system resources.
       UpdateResources(result.get(), traffic_requests[i]);

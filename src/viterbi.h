@@ -178,6 +178,13 @@ inline double GetSLAViolationCost(int prev_node, int current_node,
   return 0.0;
 }
 
+double GetSLAViolationCost(int source, int destination, double max_delay, double penalty) {
+  if (shortest_path[source][destination] > max_delay) {
+    return penalty * (shortest_path[source][destination] - max_delay);
+  }
+  return 0;
+}
+
 inline double GetTransitCost(int prev_node, int current_node,
                              const traffic_request &t_request) {
   std::vector<int> *path_ptr = nullptr;
@@ -378,6 +385,7 @@ void UpdateResources(std::vector<int> *traffic_sequence,
   int shortest_path_length =
       ComputeShortestPath(t_request.source, t_request.destination)->size() - 1;
   int embedded_path_length = 0;
+  double total_delay = 0.0;
   for (int i = 0; i < static_cast<int>(traffic_sequence->size()) - 1; ++i) {
     ReducePathResidualBandwidth(traffic_sequence->at(i),
                                 traffic_sequence->at(i + 1),
@@ -386,7 +394,13 @@ void UpdateResources(std::vector<int> *traffic_sequence,
         ComputeShortestPath(traffic_sequence->at(i),
                             traffic_sequence->at(i + 1))->size() -
         1;
+    total_delay += shortest_path[traffic_sequence->at(i)][traffic_sequence->at(i + 1)];
   }
+  double sla_penalty = 0.0;
+  if (total_delay > t_request.max_delay) {
+    sla_penalty = (total_delay - t_request.max_delay) * t_request.delay_penalty;
+  }
+  sla_costs.push_back(sla_penalty);
   stats.t_stats.back().stretch = static_cast<double>(embedded_path_length) /
                                  static_cast<double>(shortest_path_length);
   for (int i = 1; i < static_cast<int>(traffic_sequence->size()) - 1; ++i) {
