@@ -67,7 +67,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     //  Physical Network                             //
     ///////////////////////////////////////////////////
 
-    cout << "Modeling Physical Network..." << endl;
+    //cout << "Modeling Physical Network..." << endl;
 
     int kSwitchCount = 0, kInitialSwitchCount = 0, kLinkCount = 0, kServerCount = 0, kResourceCount = 0;
 
@@ -163,13 +163,13 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
 
     fclose(topology_file);
 
-    cout << "Done." << endl;
+    //cout << "Done." << endl;
 
     ///////////////////////////////////////////////////
     //  Middlebox                                    //
     ///////////////////////////////////////////////////
 
-    cout << "Modeling the VNFs..." << endl;
+    //cout << "Modeling the VNFs..." << endl;
 
     // we include 2 special type of middleboxes, ingree & egress
     // ingress is type 0
@@ -346,7 +346,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         K_m[m] = middleboxes[mboxType[m] - 2].processing_capacity;
       }
     }
-    cout << endl;
+    //cout << endl;
 
     //////////CPLEX Variable//////////
     // amp = 1, if m is a middlebox of type p
@@ -419,13 +419,13 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     */
 
-    cout << "Done." << endl;
+    //cout << "Done." << endl;
 
     ///////////////////////////////////////////////////
     //  Traffic                                      //
     ///////////////////////////////////////////////////
 
-    cout << "Modeling Traffic..." << endl;
+    //cout << "Modeling Traffic..." << endl;
 
     int kTrafficCount = traffic_requests.size();
     int trafficNodeCount[kTrafficCount], trafficLinkCount[kTrafficCount];
@@ -766,7 +766,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     */
 
-    cout << "Done." << endl;
+    //cout << "Done." << endl;
 
     ///////////////////////////////////////////////////
     //  Objective & Solution                         //
@@ -860,7 +860,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // solve the problem
     // IloCplex cplex(model);
     IloTimer timer(env);
-    cout << endl << endl << "Invoking solver..." << endl;
+    //cout << endl << endl << "Invoking solver..." << endl;
     for (int i = 0; i < cnst.getSize(); ++i) {
       pref.add(1.0);
     }
@@ -894,11 +894,11 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     timer.stop();
 
-    cout << "Solution Status = " << cplex.getStatus() << endl;
-    cout << "Solution Value = " << (opex = cplex.getObjValue()) << endl;
+    //cout << "Solution Status = " << cplex.getStatus() << endl;
+    //cout << "Solution Value = " << (opex = cplex.getObjValue()) << endl;
 
     // print xtnm
-    cout << endl;
+    //cout << endl;
     for (int t = 0; t < kTrafficCount; ++t) {
       for (int n = 0; n < trafficNodeCount[t]; ++n) {
         IloNumArray xtnm_vals(env, kMboxCount);
