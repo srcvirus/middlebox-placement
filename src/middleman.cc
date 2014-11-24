@@ -62,7 +62,8 @@ int main(int argc, char *argv[]) {
   if (algorithm == "cplex") {
     std::vector<traffic_request> current_traffic_requests;
     int current_time = traffic_requests[0].arrival_time;
-    double opex, running_time, processed_traffic = 0;
+    double opex, running_time; 
+    int processed_traffic = 0;
 
     // files to write output
     FILE *cost_log_file = fopen("log.cplex.cost.ts", "w");
@@ -89,7 +90,7 @@ int main(int argc, char *argv[]) {
       
       processed_traffic += current_traffic_requests.size();
 
-      cout << processed_traffic*100/traffic_requests.size() << "% Traffic processed." << endl;
+      cout << processed_traffic*100.0/traffic_requests.size() << "% Traffic processed." << endl;
 
       //cost log
       for (double cost : opex_breakdown) {

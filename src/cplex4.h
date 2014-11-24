@@ -893,9 +893,11 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       throw(-1);
     }
     timer.stop();
+    
+    opex = cplex.getObjValue();
 
     //cout << "Solution Status = " << cplex.getStatus() << endl;
-    //cout << "Solution Value = " << (opex = cplex.getObjValue()) << endl;
+    //cout << "Solution Value = " << opex << endl;
 
     // print xtnm
     //cout << endl;
@@ -984,15 +986,14 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     opex_breakdown.push_back(depCost);
 
     for (int _n = 0; _n < kServerCount; ++_n) {
-      int used_cpu;
+      int used_cpu = 0;
       for(int m : mbox4server[_n]){
         if (mboxType[m] == 0 || mboxType[m] == 1) {
           continue;
         }
         used_cpu += ym_vals2[m] * cmr[m][0];
       }
-      enrCost += (SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (used_cpu)) / (1.0 * (NUM_CORES_PER_SERVER)))) 
-                    * duration_hours * PER_UNIT_ENERGY_PRICE;
+      enrCost += (SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (used_cpu)) / (1.0 * (NUM_CORES_PER_SERVER)))) * duration_hours * PER_UNIT_ENERGY_PRICE;
     }
     opex_breakdown.push_back(enrCost);
 
