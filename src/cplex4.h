@@ -20,8 +20,6 @@ typedef IloArray<IloInt2dArray> IloInt3dArray;
 
 typedef IloArray<IloExprArray> IloExpr2dArray;
 
-//#define INF 9999999
-
 void print_IloInt2dArray(IloInt2dArray a, int dimension1, int dimension2,
                          string name) {
   cout << name << endl;
@@ -97,7 +95,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
 
       //connect small servers to switch
       server_count = cpu/NUM_CORES_PER_SERVER;
-      cout << "server # " << server_count << endl;
+      //cout << "server # " << server_count << endl;
       kServerCount += server_count;
       switchCPU.push_back(cpu);
     }
@@ -1105,8 +1103,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       for (int n = 0; n < trafficNodeCount[t]; ++n) {
         for (int m = 0; m < kMboxCount; ++m) {
           delay += cplex.getValue(xtnm[t][n][m]) * delta_m[m];
-          if (cplex.getValue(xtnm[t][n][m] == 1))
-            cout << "t = " << t << " n = " << n << " delay " << delay << endl;
+          //if (cplex.getValue(xtnm[t][n][m] == 1))
+          //  cout << "t = " << t << " n = " << n << " delay " << delay << endl;
         }
       }
       pnlty += ( (delay - tr.max_delay) + abs(delay - tr.max_delay) )/2.0 * tr.delay_penalty;
