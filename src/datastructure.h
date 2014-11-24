@@ -13,9 +13,9 @@
 #define MAXN 1000
 #define NIL -1
 
-#define NUM_CORES_PER_SERVER 64
-#define SERVER_IDLE_ENERGY 0.188  // Kilo Watt
-#define SERVER_PEAK_ENERGY 0.54  // Kilo Watt
+#define NUM_CORES_PER_SERVER 16
+#define SERVER_IDLE_ENERGY 0.47  // Kilo Watt
+#define SERVER_PEAK_ENERGY 0.135  // Kilo Watt
 #define POWER_CONSUMPTION_ONE_SERVER(cores)    \
   (SERVER_IDLE_ENERGY +                        \
    (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * \
