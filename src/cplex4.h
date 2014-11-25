@@ -456,16 +456,6 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     //---------------------------------------------------------------------
 
-    /*
-    //ADD: old middlebox constraint
-    for (int _n = 0; _n < kServerCount; ++_n) {
-      for (int m = 0; m < kMboxCount; ++m) {
-        model.add(bm_n[m][_n] >= hat_bm_n[m][_n]);
-        cnst.add(bm_n[m][_n] >= hat_bm_n[m][_n]);
-      }
-    }
-    */
-
     //cout << "Done." << endl;
 
     ///////////////////////////////////////////////////
@@ -523,6 +513,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // print_IloInt3dArray(gtnp, kTrafficCount, 5, kMboxTypes, "gtnp");
     //cout << "gtnp done" << endl;
 
+    /*
     //////////CPLEX Variable//////////
     // bar_xtnm = 1, if currently n-th node of traffic t is passing through m
     IloInt3dArray hat_xtnm(env, kTrafficCount);
@@ -537,6 +528,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     // TODO: read the previous configuration from file
     //cout << "hat_x done" << endl;
+    */
 
     //^^^^^CPLEX Decision Variable^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     // DECISION VAR: xtnm = 1, if n-th node of traffic t will pass through m
@@ -641,6 +633,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     //---------------------------------------------------------------------
     //cout << "cnst z" << endl;
 
+    /*
     //-----CPLEX Constraint------------------------------------------------
     // ADD: old traffic constraint
     for (int t = 0; t < kTrafficCount; ++t) {
@@ -653,6 +646,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     //---------------------------------------------------------------------
     //cout << "cnst old traffic" << endl;
+    */
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: ingress & egress constraint
@@ -731,29 +725,6 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         }
       }
     }
-    /*
-    for (int t = 0; t < kTrafficCount; ++t) {
-      for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
-        for (int n2 : nbr[t][n1]) {
-          if (n1 < n2) {
-            IloIntExpr sum(env);
-            for (int _u = 0; _u < kSwitchCount; ++_u) {
-              for (int _v : __nbr[_u]) {
-                sum += wtuv_u_v[t][n1][n2][_u][_v];
-              }
-            }
-            model.add(sum > 0);
-            for (int _s = 0; _s < kSwitchCount; ++_s) {
-              //model.add(IloIfThen(env, ztn_n[t][n1][_s] != ztn_n[t][n2][_s],
-    sum > 0));
-              //model.add(IloIfThen(env, ztn_n[t][n1][_s] == ztn_n[t][n2][_s],
-    wtuv_u_v[t][n1][n2][_s][_s] == 1));
-            }
-          }
-        }
-      }
-    }
-    */
     //---------------------------------------------------------------------
     //cout << "cnst flow" << endl;
 
@@ -850,21 +821,6 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     objective += alpha * deploymentCost;
     // add energy cost to the objective
     IloExpr energyCost(env);
-    /*
-    for (int _n = 0; _n < kServerCount; ++_n) {
-      for (int r = 0; r < kResourceCount; ++r) {
-        for (int i = 0, m; i < mbox4server[_n].size(); ++i) {
-          m = mbox4server[_n][i];
-          energyCost += ym[m] * cmr[m][r] * per_core_cost;
-        }
-      }
-    }
-    */
-    /*
-    for (int m = 0; m < kMboxCount; ++m) {
-      energyCost += ym[m] * cmr[m][0] * per_core_cost * traffic_requests[0].duration;
-    }
-    */
     IloNum duration_hours = 1.0 * traffic_requests[0].duration / (60.0 * 60.0);
     for (int _n = 0; _n < kServerCount; ++_n) {
       IloExpr consumedResource(env);
