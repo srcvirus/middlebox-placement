@@ -841,9 +841,9 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
         for (int n2 : nbr[t][n1]) {
           if (n2 > n1) {
-            for (int _u = 0; _u < kSwitchCount; ++_u) {
-              for (int _v : __nbr[_u]) {
-                forwardingCost += 0.001 * 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * beta_t * per_bit_transit_cost * traffic_requests[t].duration;
+            for (int _u = 0; _u < kInitialSwitchCount; ++_u) {
+              for (int _v : _nbr[_u]) {
+                forwardingCost += 0.001 * wtuv_u_v[t][n1][n2][_u][_v] * beta_t * per_bit_transit_cost * traffic_requests[t].duration;
               }
             }
           }
@@ -861,8 +861,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         for (int n2 : nbr[t][n1]) {
           if (n1 < n2) {
             //link delay
-            for (int _u = 0; _u < kSwitchCount; ++_u) {
-              for (int _v : __nbr[_u]) {
+            for (int _u = 0; _u < kInitialSwitchCount; ++_u) {
+              for (int _v : _nbr[_u]) {
                 delay += 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * delta_u_v[_u][_v];
               }
             }
@@ -1032,10 +1032,10 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
         for (int n2 : nbr[t][n1]) {
           if (n1 < n2) {
-            for (int _u = 0; _u < kSwitchCount; ++_u) {
-              for (int _v : __nbr[_u]) {
+            for (int _u = 0; _u < kInitialSwitchCount; ++_u) {
+              for (int _v : _nbr[_u]) {
                 value = cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]);
-                fwdCost += 0.001 * 0.5 * value * beta_t * per_bit_transit_cost * traffic_requests[t].duration;
+                fwdCost += 0.001 * value * beta_t * per_bit_transit_cost * traffic_requests[t].duration;
               }
             }
           }
@@ -1053,9 +1053,9 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
         for (int n2 : nbr[t][n1]) {
           if (n1 < n2) {
-            for (int _u = 0; _u < kSwitchCount; ++_u) {
-              for (int _v : __nbr[_u]) {
-                delay += 0.5 * cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]) * delta_u_v[_u][_v];
+            for (int _u = 0; _u < kInitialSwitchCount; ++_u) {
+              for (int _v : _nbr[_u]) {
+                delay += cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]) * delta_u_v[_u][_v];
               }
             }
           }
