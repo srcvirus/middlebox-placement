@@ -830,8 +830,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         }
         consumedResource += ym[m] * cmr[m][0];
       }
-      energyCost += (SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (consumedResource)) / (1.0 * (NUM_CORES_PER_SERVER)))) 
-                    * duration_hours * PER_UNIT_ENERGY_PRICE;
+      energyCost += POWER_CONSUMPTION_ONE_SERVER(consumedResource) * duration_hours * PER_UNIT_ENERGY_PRICE;
     }
     objective += beta * energyCost;
     // add traffic forwarding cost
@@ -863,7 +862,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
             //link delay
             for (int _u = 0; _u < kInitialSwitchCount; ++_u) {
               for (int _v : _nbr[_u]) {
-                delay += 0.5 * wtuv_u_v[t][n1][n2][_u][_v] * delta_u_v[_u][_v];
+                delay += wtuv_u_v[t][n1][n2][_u][_v] * delta_u_v[_u][_v];
               }
             }
           }
@@ -893,7 +892,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // cout << "cnst count: " << cnst_count << endl;
     timer.restart();
     // turn-off console output for cplex
-    cplex.setOut(env.getNullStream());
+    //cplex.setOut(env.getNullStream());
     // set time limit
     const IloInt timeLimit = 60 * 60;  // one hour
     cplex.setParam(IloCplex::TiLim, timeLimit);
@@ -1011,6 +1010,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     opex_breakdown.push_back(depCost);
 
+    double per_server_energy = 0.0;
     for (int _n = 0; _n < kServerCount; ++_n) {
       int used_cpu = 0;
       for(int m : mbox4server[_n]){
@@ -1019,7 +1019,11 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         }
         used_cpu += ym_vals2[m] * cmr[m][0];
       }
-      enrCost += (SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (used_cpu)) / (1.0 * (NUM_CORES_PER_SERVER)))) * duration_hours * PER_UNIT_ENERGY_PRICE;
+      //per_server_energy = (SERVER_IDLE_ENERGY + (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * ((1.0 * (used_cpu)) / (1.0 * (NUM_CORES_PER_SERVER)))) * duration_hours * PER_UNIT_ENERGY_PRICE;
+      per_server_energy = POWER_CONSUMPTION_ONE_SERVER(used_cpu) * duration_hours * PER_UNIT_ENERGY_PRICE;
+      enrCost += per_server_energy;
+
+      cout << "Server " << _n << " Cores = " << used_cpu << " energy = " << per_server_energy << endl;
     }
     opex_breakdown.push_back(enrCost);
 
