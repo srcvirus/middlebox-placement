@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
   const int kNodeCount = 12, kEdgeCount = 15;
   
   // Possible numebr of cores.
-  int capacities[] = {0, 4, 6, 0, 8, 12, 0, 16, 32, 0, 64};
+  int capacities[] = {0, 16, 16, 0, 16, 16, 0, 16, 16, 0, 16};
   
   map <string,int> node_dictionary;
   fprintf(ofp, "%d %d\n", kNodeCount, kEdgeCount);
