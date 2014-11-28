@@ -99,7 +99,8 @@ int main(int argc, char *argv[]) {
       fprintf(cost_log_file, "%lf %lf\n", opex, running_time);
 
       //sequence log
-      for (auto seq : sequence) {
+      for (int i = 0; i < current_traffic_requests.size(); ++i) {
+        std::vector<int> seq = sequence[i];
         for (int sw : seq) {
           fprintf(sequence_log_file, "%d ", sw);
         }
