@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 0,0,1,3285,293,0.010,proxy,firewall,ids
 0,0,2,1983,305,0.010,proxy,firewall,ids
 0,0,3,1957,297,0.010,ids,proxy,firewall
@@ -75,3 +76,8 @@
 0,11,3,5865,294,0.010,ids,firewall,proxy
 0,11,5,2228,296,0.010,firewall,proxy,ids
 0,11,6,953,308,0.010,proxy,firewall,ids
+=======
+0,1,5,500000,150,0.01,firewall,proxy,ids
+1,3,4,250000,200,0.004,proxy,firewall,ids
+2,2,3,200000,220,0.001,ids,proxy,firewall
+>>>>>>> 13deb7a357531770dac27442052cf5a3412d6755
