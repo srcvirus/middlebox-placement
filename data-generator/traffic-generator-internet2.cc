@@ -77,13 +77,13 @@ int main(int argc, char *argv[]) {
     const int kLineCount = 7 * 24 * 12;
     const int kTimeWindow = 100;
     vector<double> current_line, prev_line;
-    ReadLine(prev_line, &ifp);
+    // ReadLine(prev_line, &ifp);
     int j = 0;
-    vector<vector<double>> current_traffic_window;
     while (j < kLineCount) {
       int n_points = 0;
       int start_time = current_time;
       int stop_time = current_time + kTimeWindow;
+      vector<vector<double>> current_traffic_window;
       while (j < kLineCount &&
               current_time <= stop_time) {
         ReadLine(current_line, &ifp);
