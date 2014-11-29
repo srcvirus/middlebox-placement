@@ -2,6 +2,7 @@
 #define MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
 #include "datastructure.h"
 
+#include <algorithm>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string>
@@ -55,6 +56,39 @@ T GetNthPercentile(const std::vector<T> &data, int n) {
     rank /= 100;
   --rank;
   return temp_data_buffer[rank];
+}
+
+inline std::unique_ptr<std::vector<int> > ComputeShortestPath(int source,
+                                                              int destination) {
+  std::unique_ptr<std::vector<int> > path(new std::vector<int>());
+  while (destination != NIL) {
+    path->push_back(destination);
+    destination = sp_pre[source][destination];
+  }
+  std::reverse(path->begin(), path->end());
+  return std::move(path);
+}
+
+inline int GetLatency(int source, int destination) {
+  for (edge_endpoint endpoint : graph[source]) {
+    if (endpoint.u->node_id == destination) return endpoint.delay;
+  }
+  return NIL;
+}
+
+double GetSolutionStretch(const std::unique_ptr<std::vector<int>>& result) {
+  int embedded_path_length = 0;
+  const int kSequenceLength = result->size();
+  int kSource = result->at(0);
+  int kDestination = result->at(kSequenceLength - 1);
+  int shortest_path_length = ComputeShortestPath(kSource, kDestination)->size()
+                              - 1;
+  for (int i = 0; i < kSequenceLength - 1; ++i) {
+    embedded_path_length += ComputeShortestPath(result->at(i), 
+                                                result->at(i + 1))->size() - 1;
+  }
+  return static_cast<double>(embedded_path_length) /
+           static_cast<double>(shortest_path_length);
 }
 
 void ProcessStats(solution_statistics &s,

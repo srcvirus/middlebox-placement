@@ -5,23 +5,6 @@
 #include "util.h"
 #include <algorithm>
 
-inline std::unique_ptr<std::vector<int> > ComputeShortestPath(int source,
-                                                              int destination) {
-  std::unique_ptr<std::vector<int> > path(new std::vector<int>());
-  while (destination != NIL) {
-    path->push_back(destination);
-    destination = sp_pre[source][destination];
-  }
-  std::reverse(path->begin(), path->end());
-  return std::move(path);
-}
-
-inline int GetLatency(int source, int destination) {
-  for (edge_endpoint endpoint : graph[source]) {
-    if (endpoint.u->node_id == destination) return endpoint.delay;
-  }
-  return NIL;
-}
 
 inline int GetEdgeResidualBandwidth(int source, int destination) {
   for (auto &endpoint : graph[source]) {
@@ -196,7 +179,7 @@ inline double GetTransitCost(int prev_node, int current_node,
     path_ptr = path_cache[cache_index].get();
   }
   if (path_ptr) {
-    int path_length = path_ptr->size();
+    int path_length = path_ptr->size() - 1;
     return (1.0 / 1000.0) * path_length * per_bit_transit_cost *
            t_request.min_bandwidth * t_request.duration;
   }
