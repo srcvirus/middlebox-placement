@@ -802,6 +802,34 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
 
     //cout << "Done." << endl;
 
+    //-----CPLEX Constraint------------------------------------------------
+    for (int t = 0; t < kTrafficCount; ++t) {
+      traffic_request tr = traffic_requests[t];
+      IloExpr delay(env);
+      //link delay
+      for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
+        for (int n2 : nbr[t][n1]) {
+          if (n1 < n2) {
+            //link delay
+            for (int _u = 0; _u < kInitialSwitchCount; ++_u) {
+              for (int _v : _nbr[_u]) {
+                delay += wtuv_u_v[t][n1][n2][_u][_v] * delta_u_v[_u][_v];
+              }
+            }
+          }
+        }
+      }
+      //middlebox processing delay
+      for (int n = 0; n < trafficNodeCount[t]; ++n) {
+        for (int m = 0; m < kMboxCount; ++m) {
+          delay += xtnm[t][n][m] * delta_m[m];
+        }
+      }
+      model.add(delay <= tr.max_delay);
+      //penalty += ( (delay - tr.max_delay) + IloAbs(delay - tr.max_delay) )/2.0  * tr.delay_penalty;
+    }
+    //---------------------------------------------------------------------
+
     ///////////////////////////////////////////////////
     //  Objective & Solution                         //
     ///////////////////////////////////////////////////
@@ -809,7 +837,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     IloNum alpha = 1.0;
     IloNum beta = 1.0;
     IloNum gamma = 1.0;
-    IloNum lambda = 1.0;
+    IloNum lambda = 10.0;
 
     // build the objective
     IloExpr objective(env);
