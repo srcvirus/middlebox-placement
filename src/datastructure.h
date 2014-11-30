@@ -208,4 +208,5 @@ extern double per_core_cost, per_bit_transit_cost;
 extern double cost[MAXN][MAXN];
 extern int pre[MAXN][MAXN];
 extern int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
+extern middlebox fake_mbox;
 #endif  // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_

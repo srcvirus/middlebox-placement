@@ -151,12 +151,14 @@ inline int IsResourceAvailable(int prev_node, int current_node,
 }
 
 inline double GetSLAViolationCost(int prev_node, int current_node,
-                                  const traffic_request &t_request) {
+                                  const traffic_request &t_request,
+                                  const middlebox& m_box) {
   const int kNumSegments = t_request.middlebox_sequence.size() + 1;
   const double kPerSegmentLatencyBound =
       (1.0 * t_request.max_delay) / kNumSegments;
-  if (shortest_path[prev_node][current_node] > kPerSegmentLatencyBound)
-    return (shortest_path[prev_node][current_node] - kPerSegmentLatencyBound) *
+  if (shortest_path[prev_node][current_node] + m_box.processing_delay > 
+          kPerSegmentLatencyBound)
+    return (shortest_path[prev_node][current_node] + m_box.processing_delay - kPerSegmentLatencyBound) *
            t_request.delay_penalty;
   return 0.0;
 }
@@ -229,7 +231,7 @@ double GetCost(int prev_node, int current_node, const resource &resource_vector,
       GetEnergyCost(current_node, m_box, resource_vector, t_request);
   double transit_cost = GetTransitCost(prev_node, current_node, t_request);
   double sla_violation_cost =
-      GetSLAViolationCost(prev_node, current_node, t_request);
+      GetSLAViolationCost(prev_node, current_node, t_request, m_box);
   DEBUG("dep_cost = %lf, en_cost = %lf, tr_cost = %lf,"
         "sla_cost = %lf\n",
         deployment_cost, energy_cost, transit_cost, sla_violation_cost);
@@ -328,7 +330,8 @@ std::unique_ptr<std::vector<int> > ViterbiCompute(
     double transition_cost =
         cost[kNumStages - 1][cur_node] +
         GetTransitCost(cur_node, t_request.destination, t_request) +
-        GetSLAViolationCost(cur_node, t_request.destination, t_request);
+        GetSLAViolationCost(cur_node, t_request.destination, t_request,
+                            fake_mbox);
     if (min_cost > transition_cost) {
       min_cost = transition_cost;
       min_index = cur_node;
@@ -378,6 +381,9 @@ void UpdateResources(std::vector<int> *traffic_sequence,
                             traffic_sequence->at(i + 1))->size() -
         1;
     total_delay += shortest_path[traffic_sequence->at(i)][traffic_sequence->at(i + 1)];
+    if (i != 0) {
+      total_delay += middleboxes[t_request.middlebox_sequence[i - 1]].processing_delay;
+    }
   }
   double sla_penalty = 0.0;
   if (total_delay > t_request.max_delay) {

@@ -33,6 +33,7 @@ int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
 solution_statistics stats;
 std::vector<std::unique_ptr<std::vector<int> > > all_results;
+middlebox fake_mbox("switch", "0", "0", TOSTRING(INF), "0.0");
 
 int main(int argc, char *argv[]) {
   if (argc < 6) {
