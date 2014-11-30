@@ -22,34 +22,35 @@ typedef IloArray<IloExprArray> IloExpr2dArray;
 
 void print_IloInt2dArray(IloInt2dArray a, int dimension1, int dimension2,
                          string name) {
-  cout << name << endl;
+  DEBUG("%s\n", name.c_str());
   for (int i = 0; i < dimension1; ++i) {
     for (int j = 0; j < dimension2; ++j) {
-      cout << a[i][j] << " ";
+      DEBUG("%d ", a[i][j]);
     }
-    cout << endl;
+    DEBUG("\n");
   }
 }
 
 void print_IloInt3dArray(IloInt3dArray a, int dimension1, int dimension2,
                          int dimension3, string name) {
-  cout << name << endl;
+  DEBUG("%s\n", name.c_str());
   for (int i = 0; i < dimension1; ++i) {
-    cout << "dim1 = " << i << endl;
+    DEBUG("dim1 = %d\n", i);
     for (int j = 0; j < dimension2; ++j) {
       for (int k = 0; k < dimension3; ++k) {
-        cout << a[i][j][k] << " ";
+        DEBUG("%d ", a[i][j][k]);
       }
-      cout << endl;
+      DEBUG("\n");
     }
-    cout << endl;
+    DEBUG("\n");
   }
 }
 
 void run_cplex(std::vector<traffic_request> traffic_requests, 
               double &opex, std::vector<double> &opex_breakdown,
               double &running_time, 
-              std::vector<int> *sequence, std::vector<int> &utilization,
+              std::vector<int> *sequence, int *delays,
+              std::vector<int> &utilization,
               string topology_filename){
   IloEnv env;
   try {
@@ -65,7 +66,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     //  Physical Network                             //
     ///////////////////////////////////////////////////
 
-    //cout << "Modeling Physical Network..." << endl;
+    DEBUG("Modeling Physical Network...\n");
 
     int kSwitchCount = 0, kInitialSwitchCount = 0, kLinkCount = 0, kServerCount = 0, kResourceCount = 0;
 
@@ -206,7 +207,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
 
     fclose(topology_file);
 
-    //cout << "Done." << endl;
+    DEBUG("Done.\n");
 
     ///////////////////////////////////////////////////
     //  Middlebox                                    //
@@ -802,6 +803,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
 
     //cout << "Done." << endl;
 
+    /*
     //-----CPLEX Constraint------------------------------------------------
     for (int t = 0; t < kTrafficCount; ++t) {
       traffic_request tr = traffic_requests[t];
@@ -829,6 +831,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       //penalty += ( (delay - tr.max_delay) + IloAbs(delay - tr.max_delay) )/2.0  * tr.delay_penalty;
     }
     //---------------------------------------------------------------------
+    */
 
     ///////////////////////////////////////////////////
     //  Objective & Solution                         //
@@ -837,7 +840,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     IloNum alpha = 1.0;
     IloNum beta = 1.0;
     IloNum gamma = 1.0;
-    IloNum lambda = 10.0;
+    IloNum lambda = 1.0;
 
     // build the objective
     IloExpr objective(env);
@@ -920,9 +923,11 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // cout << "cnst count: " << cnst_count << endl;
     timer.restart();
     // turn-off console output for cplex
-    //cplex.setOut(env.getNullStream());
+    #ifndef DBG
+    cplex.setOut(env.getNullStream());
+    #endif
     // set time limit
-    const IloInt timeLimit = 60 * 60;  // one hour
+    const IloInt timeLimit = 5 * 60;  // one hour
     cplex.setParam(IloCplex::TiLim, timeLimit);
     if (!cplex.solve()) {
       timer.stop();
@@ -1051,7 +1056,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       per_server_energy = POWER_CONSUMPTION_ONE_SERVER(used_cpu) * duration_hours * PER_UNIT_ENERGY_PRICE;
       enrCost += per_server_energy;
 
-      cout << "Server " << _n << " Cores = " << used_cpu << " energy = " << per_server_energy << endl;
+      //cout << "Server " << _n << " Cores = " << used_cpu << " energy = " << per_server_energy << endl;
     }
     opex_breakdown.push_back(enrCost);
 
@@ -1093,6 +1098,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
           }
         }
       }
+      //cout << "Traffic " << t << " propagation delay = " << delay << endl;
       //middlebox processing delay
       for (int n = 0; n < trafficNodeCount[t]; ++n) {
         for (int m = 0; m < kMboxCount; ++m) {
@@ -1101,6 +1107,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
           //  cout << "t = " << t << " n = " << n << " delay " << delay << endl;
         }
       }
+      //cout << "Traffic " << t << " total delay = " << delay << endl;
+      delays[t] = delay;
       pnlty += ( (delay - tr.max_delay) + abs(delay - tr.max_delay) )/2.0 * tr.delay_penalty;
     }
     opex_breakdown.push_back(pnlty);

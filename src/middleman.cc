@@ -83,11 +83,12 @@ int main(int argc, char *argv[]) {
       current_time = traffic_requests[i].arrival_time;
       
       std::vector<int> sequence[current_traffic_requests.size()];
+      int delays[current_traffic_requests.size()];
       std::vector<double> opex_breakdown;
       std::vector<int> utilization;
 
       run_cplex(current_traffic_requests, opex, opex_breakdown, 
-                running_time, sequence, utilization, topology_filename);
+                running_time, sequence, delays, utilization, topology_filename);
       
       processed_traffic += current_traffic_requests.size();
 
@@ -105,6 +106,7 @@ int main(int argc, char *argv[]) {
         for (int sw : seq) {
           fprintf(sequence_log_file, "%d ", sw);
         }
+        fprintf(sequence_log_file, "%d ", delays[i]);
         fprintf(sequence_log_file, "\n");
       }
 
