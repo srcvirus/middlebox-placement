@@ -213,7 +213,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     //  Middlebox                                    //
     ///////////////////////////////////////////////////
 
-    //cout << "Modeling the VNFs..." << endl;
+    DEBUG("Modeling the VNFs...\n");
 
     // we include 2 special type of middleboxes, ingree & egress
     // ingress is type 0
@@ -457,13 +457,13 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     //---------------------------------------------------------------------
 
-    //cout << "Done." << endl;
+    DEBUG("Done.\n");
 
     ///////////////////////////////////////////////////
     //  Traffic                                      //
     ///////////////////////////////////////////////////
 
-    //cout << "Modeling Traffic..." << endl;
+    DEBUG("Modeling Traffic...\n");
 
     int kTrafficCount = traffic_requests.size();
     int trafficNodeCount[kTrafficCount], trafficLinkCount[kTrafficCount];
@@ -800,7 +800,6 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     */
 
-    //cout << "Done." << endl;
 
     /*
     //-----CPLEX Constraint------------------------------------------------
@@ -831,6 +830,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     //---------------------------------------------------------------------
     */
+
+    DEBUG("Done.\n");
 
     ///////////////////////////////////////////////////
     //  Objective & Solution                         //
@@ -915,10 +916,10 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // solve the problem
     // IloCplex cplex(model);
     IloTimer timer(env);
-    //cout << endl << endl << "Invoking solver..." << endl;
-    for (int i = 0; i < cnst.getSize(); ++i) {
-      pref.add(1.0);
-    }
+    DEBUG("Invoking solver...\n");
+    //for (int i = 0; i < cnst.getSize(); ++i) {
+    //  pref.add(1.0);
+    //}
     // cout << "cnst count: " << cnst_count << endl;
     timer.restart();
     // turn-off console output for cplex
@@ -926,8 +927,10 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     cplex.setOut(env.getNullStream());
     #endif
     // set time limit
-    const IloInt timeLimit = 5 * 60;  // one hour
+    const IloInt timeLimit = 60 * 60;  // one hour
+    const IloNum relativeGap = 0.01; // find Integer solution within 1% of optimal
     cplex.setParam(IloCplex::TiLim, timeLimit);
+    cplex.setParam(IloCplex::EpGap, relativeGap);
     if (!cplex.solve()) {
       timer.stop();
       cout << "Could not solve ILP!" << endl;
