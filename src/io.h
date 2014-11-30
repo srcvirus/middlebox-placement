@@ -32,16 +32,6 @@ inline int GetMiddleboxIndex(const std::string &middlebox_name) {
   return -1;  // Not found.
 }
 
-/*
-inline int GetTrafficClassIndex(const std::string &traffic_class_name) {
-  for (int i = 0; i < traffic_classes.size(); ++i) {
-    if (traffic_classes[i].class_name == traffic_class_name)
-      return i;
-  }
-  return -1; // Not found.
-}
-*/
-
 std::unique_ptr<std::vector<std::vector<std::string> > > ReadCSVFile(
     const char *filename) {
   DEBUG("[Parsing %s]\n", filename);
@@ -66,24 +56,20 @@ std::unique_ptr<std::vector<std::vector<std::string> > > ReadCSVFile(
   return std::move(ret_vector);
 }
 
-/*
-void InitializeTrafficClasses(const char *filename) {
-  traffic_classes.clear();
+void InitializeAllResults(const char *filename) {
+  results.clear();
   auto csv_vector = ReadCSVFile(filename);
   for (int i = 0; i < csv_vector->size(); ++i) {
     std::vector<std::string> &row = (*csv_vector)[i];
-    traffic_classes.emplace_back(row[0], row[1], row[2], row[3]);
+    std::vector<int> current_result;
+    for (auto& element : row) {
+      current_result.push_back(atoi(element.c_str()));
+      DEBUG("Pushing %s\n", element.c_str());
+    }
+    DEBUG("\n");
+    results.push_back(current_result);
   }
 }
-
-void PrintTrafficClasses() {
-  printf("[Traffic Classes (count = %d)]\n",
-         static_cast<int>(traffic_classes.size()));
-  for (int i = 0; i < traffic_classes.size(); ++i) {
-    printf("[i = %d] %s\n", i, traffic_classes[i].GetDebugString().c_str());
-  }
-}
-*/
 
 void InitializeMiddleboxes(const char *filename) {
   middleboxes.clear();

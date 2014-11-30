@@ -52,27 +52,6 @@ struct middlebox_instance {
       : m_box(m_box), residual_capacity(res_cap) {}
 };
 
-struct traffic_class {
-  std::string class_name;
-  int min_bandwidth;     // In Mbps.
-  int max_delay;         // In miliseconds.
-  double delay_penalty;  // Penalty for per 1 milisecond gurantee violation.
-  // double bw_penalty;  // Not used now. For future use.
-  traffic_class(const std::string &tc_name, const std::string &tc_min_bandwidth,
-                const std::string &tc_max_delay,
-                const std::string &tc_delay_penalty)
-      : class_name(tc_name),
-        min_bandwidth(atoi(tc_min_bandwidth.c_str())),
-        max_delay(atoi(tc_max_delay.c_str())),
-        delay_penalty(atof(tc_delay_penalty.c_str())) {}
-  std::string GetDebugString() {
-    return "class_name : " + class_name + ", min_bandwidth : " +
-           std::to_string(min_bandwidth) + ", max_delay : " +
-           std::to_string(max_delay) + ", delay_penalty : " +
-           std::to_string(delay_penalty);
-  }
-};
-
 struct traffic_request {
   int arrival_time;
   int duration;
@@ -194,7 +173,6 @@ inline int GetEdgeCount(const std::vector<std::vector<edge_endpoint> > &g) {
 
 // Global data structures;
 extern std::vector<middlebox> middleboxes;
-extern std::vector<traffic_class> traffic_classes;
 extern std::vector<traffic_request> traffic_requests;
 extern std::vector<node> nodes;
 extern std::vector<std::vector<edge_endpoint> > graph;
@@ -202,11 +180,12 @@ extern std::vector<std::vector<middlebox_instance> > deployed_mboxes;
 extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > >
     path_cache;
 extern std::vector<double> deployment_costs, energy_costs, 
-       transit_costs, sla_costs;
+       transit_costs, sla_costs, total_costs, stretches;
 extern solution_statistics stats;
 extern double per_core_cost, per_bit_transit_cost;
 extern double cost[MAXN][MAXN];
 extern int pre[MAXN][MAXN];
 extern int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 extern middlebox fake_mbox;
+extern std::vector<std::vector<int> > results;
 #endif  // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_

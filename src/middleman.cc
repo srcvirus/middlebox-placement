@@ -20,12 +20,12 @@ const std::string kUsage =
     "equest_file=<traffic_request_file>\n\t--algorithm=<algorithm>";
 
 std::vector<middlebox> middleboxes;
-std::vector<traffic_class> traffic_classes;
 std::vector<traffic_request> traffic_requests;
 std::vector<node> nodes;
 std::vector<std::vector<edge_endpoint> > graph;
 std::vector<std::vector<middlebox_instance> > deployed_mboxes;
-std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs;
+std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs,
+total_costs, stretches;
 double per_core_cost, per_bit_transit_cost;
 double cost[MAXN][MAXN];
 int pre[MAXN][MAXN];
@@ -33,6 +33,7 @@ int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
 solution_statistics stats;
 std::vector<std::unique_ptr<std::vector<int> > > all_results;
+std::vector<std::vector<int> > results;
 middlebox fake_mbox("switch", "0", "0", TOSTRING(INF), "0.0");
 
 int main(int argc, char *argv[]) {
@@ -137,7 +138,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < kNumTrafficRequests; ++i) {
       traffic_requests[i].duration = 6000; //300;
       if (current_time != traffic_requests[i].arrival_time) {
-        RefreshServerStats(current_time);
+        // RefreshServerStats(current_time);
         current_time = traffic_requests[i].arrival_time;
         ReleaseAllResources();
       }
@@ -151,6 +152,7 @@ int main(int argc, char *argv[]) {
           solution_end_time - solution_start_time).count();
 
       // Compute the cost components.
+      /* 
       double d_cost = 0.0, e_cost = 0.0, t_cost = 0.0, s_cost = 0.0;
       int prev_node = NIL, current_node = NIL;
       const int kLastIndex = static_cast<int>(result->size()) - 1;
@@ -180,12 +182,10 @@ int main(int argc, char *argv[]) {
       deployment_costs.push_back(d_cost);
       energy_costs.push_back(e_cost);
       transit_costs.push_back(t_cost);
+      printf("%.3lf %.3lf\n", e_cost, t_cost);
       // sla_costs.push_back(s_cost);
-
-      // Update the system resources.
+      */
       UpdateResources(result.get(), traffic_requests[i]);
-
-      // Refresh the per server statistics.
       RefreshServerStats(current_time);
 
       // Progress bar
@@ -205,8 +205,8 @@ int main(int argc, char *argv[]) {
                static_cast<double>(stats.num_accepted + stats.num_rejected));
 
     // Process that collected statistics and write to log.
-    const std::string kStatsOutputFilePrefix = "log";
-    ProcessStats(stats, kStatsOutputFilePrefix);
+    // const std::string kStatsOutputFilePrefix = "log";
+    // ProcessStats(stats, kStatsOutputFilePrefix);
   }
 
   // DEBUG: Write all the computed sequences in a file.
@@ -214,14 +214,15 @@ int main(int argc, char *argv[]) {
   int row_index = 0;
   for (auto &row : all_results) {
     for (int i = 0; i < row->size(); ++i) {
-      fprintf(all_results_file, " %d", row->at(i));
-      if (i == 0 || i == row->size() - 1) continue;
+      if (i != 0) fprintf(all_results_file, ",");
+      fprintf(all_results_file, "%d", row->at(i));
     }
-    double total_cost = deployment_costs[row_index] + energy_costs[row_index] +
-                        transit_costs[row_index] + sla_costs[row_index];
-    fprintf(all_results_file, " %.5lf %.5lf %.5lf %.5lf %.5lf\n",
-            deployment_costs[row_index], energy_costs[row_index],
-            transit_costs[row_index], sla_costs[row_index], total_cost);
+    fprintf(all_results_file, "\n");
+    // double total_cost = deployment_costs[row_index] + energy_costs[row_index] +
+    //                    transit_costs[row_index] + sla_costs[row_index];
+    // fprintf(all_results_file, " %.5lf %.5lf %.5lf %.5lf %.5lf\n",
+    //        deployment_costs[row_index], energy_costs[row_index],
+    //        transit_costs[row_index], sla_costs[row_index], total_cost);
     ++row_index;
   }
   fclose(all_results_file);
