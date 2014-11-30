@@ -717,8 +717,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
             for (int _u = 0; _u < kSwitchCount; ++_u) {
               IloIntExpr sum(env);
               for (int _v : __nbr[_u]) {
-                sum +=
-                    wtuv_u_v[t][n1][n2][_u][_v] - wtuv_u_v[t][n1][n2][_v][_u];
+                sum += wtuv_u_v[t][n1][n2][_u][_v] - wtuv_u_v[t][n1][n2][_v][_u];
               }
               model.add(sum == ztn_n[t][n1][_u] - ztn_n[t][n2][_u]);
             }
@@ -1120,6 +1119,26 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         consumed_cores += ym_vals2[m] * cmr[m][0];
       }
       utilization.push_back(consumed_cores);
+    }
+    double allocated_bandwidth = 0.0;
+    for (int _u = 0; _u < kInitialSwitchCount; ++_u) {
+      for (int _v : _nbr[_u]) {
+        if (_u < _v) {
+          allocated_bandwidth = 0.0;
+          for (int t = 0; t < kTrafficCount; ++t) {
+            for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
+              for (int n2 : nbr[t][n1]) {
+                if (n1 < n2) {
+                  allocated_bandwidth += ( cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]) + 
+                                            cplex.getValue(wtuv_u_v[t][n1][n2][_v][_u]) )
+                                          * traffic_requests[t].min_bandwidth;
+                }
+              }
+            }
+          }
+          utilization.push_back(allocated_bandwidth);
+        }
+      }
     }
 
     /*

@@ -70,6 +70,9 @@ int main(int argc, char *argv[]) {
     FILE *sequence_log_file = fopen("log.cplex.sequences", "w");
     FILE *util_log_file = fopen("log.cplex.util.ts", "w");
 
+    // print the node and edge count at the begining of the sequence file
+    fprintf(util_log_file, "%d %d\n", GetNodeCount(graph), GetEdgeCount(graph));
+
     for (int i = 0; i < traffic_requests.size();) {
       traffic_requests[i].duration = 6000; // 300;
 
