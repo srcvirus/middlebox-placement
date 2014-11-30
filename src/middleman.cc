@@ -107,10 +107,13 @@ int main(int argc, char *argv[]) {
       //sequence log
       for (int i = 0; i < current_traffic_requests.size(); ++i) {
         std::vector<int> seq = sequence[i];
-        for (int sw : seq) {
-          fprintf(sequence_log_file, "%d ", sw);
+        for (int j = 0; j < seq.size(); ++j) {
+          fprintf(sequence_log_file, "%d", seq[j]);
+          if (j < seq.size() - 1) {
+            fprintf(sequence_log_file, ",");
+          }
         }
-        fprintf(sequence_log_file, "%d ", delays[i]);
+        //fprintf(sequence_log_file, "%d ", delays[i]);
         fprintf(sequence_log_file, "\n");
       }
 
