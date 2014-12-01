@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
         if (u == v)
           continue;
         current_traffic[k] /= (10.0 * 300.0 * (n_points - 1));
-        int max_latency = 325 + 70 + (rand() % 30);
+        int max_latency = 425 + 80 + (rand() % 30);
         double penalty = 0.01;
         int traffic = current_traffic[k];
         if (traffic < 300)
