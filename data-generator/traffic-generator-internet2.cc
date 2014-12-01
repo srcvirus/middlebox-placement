@@ -63,7 +63,7 @@ vector<double> ProcessWindow(const vector<vector<double>> v) {
 int main(int argc, char *argv[]) {
   const int kMaxTrafficFileIndex = atoi(argv[1]);
   int current_time = 0;
-  FILE *ofp = fopen("traffic-requests", "w");
+  FILE *ofp = fopen("traffic-request", "w");
   for (int i = 1, current_time = 0; i <= kMaxTrafficFileIndex; ++i) {
     std::string kTrafficFileName =
         "/home/sr2chowd/UW/middlebox-placement/traffic-data-yzhang/X";
@@ -102,8 +102,8 @@ int main(int argc, char *argv[]) {
         if (u == v)
           continue;
         current_traffic[k] /= (10.0 * 300.0 * (n_points - 1));
-        int max_latency = 325 + 70 + (rand() % 30);
-        double penalty = 0.01;
+        int max_latency = 425 + 80 + (rand() % 30);
+        double penalty = 0.0000001;
         int traffic = current_traffic[k];
         if (traffic < 300)
           continue;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
           //       middlebox_names[mbox_seq[0]].c_str(),
           //       middlebox_names[mbox_seq[1]].c_str(),
           //       middlebox_names[mbox_seq[2]].c_str());
-        fprintf(ofp, "%d,%d,%d,%d,%d,%.3lf,%s,%s,%s\n", start_time, u, v,
+        fprintf(ofp, "%d,%d,%d,%d,%d,%.8lf,%s,%s,%s\n", start_time, u, v,
                 traffic, max_latency, penalty,
                 middlebox_names[mbox_seq[0]].c_str(),
                 middlebox_names[mbox_seq[1]].c_str(),
