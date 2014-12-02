@@ -181,11 +181,13 @@ extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > >
     path_cache;
 extern std::vector<double> deployment_costs, energy_costs, 
        transit_costs, sla_costs, total_costs, stretches;
+extern std::vector<double> net_util;
 extern solution_statistics stats;
 extern double per_core_cost, per_bit_transit_cost;
 extern double cost[MAXN][MAXN];
 extern int pre[MAXN][MAXN];
 extern int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
+extern int shortest_edge_path[MAXN][MAXN];
 extern middlebox fake_mbox;
 extern std::vector<std::vector<int> > results;
 #endif  // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_

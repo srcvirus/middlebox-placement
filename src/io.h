@@ -124,9 +124,11 @@ void InitializeTopology(const char *filename) {
     nodes[i].residual_cores = nodes[i].num_cores;
     graph[i].clear();
     shortest_path[i][i] = 0.0;
+    shortest_edge_path[i][i] = 0;
     sp_pre[i][i] = NIL;
     for (int j = i + 1; j < node_count; j++) {
       shortest_path[i][j] = shortest_path[j][i] = INF;
+      shortest_edge_path[i][j] = shortest_edge_path[j][i] = INF;
       sp_pre[i][j] = sp_pre[j][i] = NIL;
     }
   }
@@ -140,6 +142,8 @@ void InitializeTopology(const char *filename) {
           nodes[source].GetDebugString().c_str());
     graph[source].emplace_back(&nodes[destination], bandwidth, delay);
     graph[destination].emplace_back(&nodes[source], bandwidth, delay);
+    shortest_edge_path[source][destination] = 1;
+    shortest_edge_path[destination][source] = 1;
     shortest_path[source][destination] = shortest_path[destination][source] =
         delay;
     sp_pre[source][destination] = source;
@@ -149,9 +153,10 @@ void InitializeTopology(const char *filename) {
     for (int i = 0; i < node_count; ++i) {
       for (int j = 0; j < node_count; ++j) {
         if (i == j) continue;
-        int relaxed_cost = shortest_path[i][k] + shortest_path[k][j];
-        if (shortest_path[i][j] > relaxed_cost) {
-          shortest_path[i][j] = relaxed_cost;
+        int relaxed_cost = shortest_edge_path[i][k] + shortest_edge_path[k][j];
+        if (shortest_edge_path[i][j] > relaxed_cost) {
+          shortest_edge_path[i][j] = relaxed_cost;
+          shortest_path[i][j] = shortest_path[i][k] + shortest_path[k][j];
           sp_pre[i][j] = sp_pre[k][j];
         }
       }

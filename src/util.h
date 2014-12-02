@@ -348,11 +348,35 @@ double GetCost(int prev_node, int current_node, const resource &resource_vector,
         deployment_cost, energy_cost, transit_cost, sla_violation_cost);
   return deployment_cost + energy_cost + transit_cost + sla_violation_cost;
 }
+
 inline int GetLatency(int source, int destination) {
   for (edge_endpoint endpoint : graph[source]) {
     if (endpoint.u->node_id == destination) return endpoint.delay;
   }
   return NIL;
+}
+
+int GetBandwidthUsage(const std::vector<int>& traffic_sequence,
+                      const traffic_request& t_request)
+{
+  int bandwidth_usage = 0;
+  for (int i = 0; i < traffic_sequence.size() - 1; ++i) {
+    bandwidth_usage += (t_request.min_bandwidth * 
+                         ComputeShortestPath(traffic_sequence[i],
+                                             traffic_sequence[i + 1])->size() 
+                                               - 1);
+  }
+  return bandwidth_usage;
+}
+
+long GetTotalNetworkBandwidth() {
+  long total_bandwidth = 0;
+  for (int i = 0; i < graph.size(); ++i) {
+    for (auto& endpoint : graph[i]) {
+      total_bandwidth += endpoint.bandwidth;
+    }
+  }
+  return total_bandwidth;
 }
 
 void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
@@ -443,9 +467,53 @@ void ComputeAllStretches(const std::vector<std::vector<int>> &solutions) {
   }
 }
 
+void ComputeNetworkUtilization(
+  const std::vector<std::vector<int>>& solutions) {
+  const long kNetworkCapacity = GetTotalNetworkBandwidth();
+  for(int i = 0; i < traffic_requests.size(); ++i) {
+    long bandwidth_usage = GetBandwidthUsage(solutions[i], traffic_requests[i]);
+    net_util.push_back(static_cast<double>(bandwidth_usage) /
+                         static_cast<double>(kNetworkCapacity));
+  }
+}
+
+void ProcessNetUtilizationLogs(const std::string& output_file_prefix) {
+  // Write time series data for utilization.
+  const std::string kNetUtilTsFileName = output_file_prefix + ".netutil.ts";
+  FILE* netutil_ts_file = fopen(kNetUtilTsFileName.c_str(), "w");
+  int current_time = traffic_requests[0].arrival_time;
+  double current_util = 0.0;
+  std::vector<double> netutil_ts_data;
+  for (int i = 0; i < traffic_requests.size(); ++i) {
+    if (current_time != traffic_requests[i].arrival_time) {
+      netutil_ts_data.push_back(current_util);
+      fprintf(netutil_ts_file, "%d %lf\n", current_time, current_util);
+      current_time = traffic_requests[i].arrival_time;
+      current_util = 0.0;
+    }
+    current_util += net_util[i];
+  }
+  netutil_ts_data.push_back(current_util);
+  fprintf(netutil_ts_file, "%d %lf\n", current_time, current_util);
+  fclose(netutil_ts_file);
+
+  // Write mean, 5th and 95th percentile of this utilization data to file.
+  double mean_util = GetMean(netutil_ts_data);
+  double fifth_percentile_util = GetNthPercentile(netutil_ts_data, 5);
+  double ninety_fifth_percentile_util = GetNthPercentile(netutil_ts_data, 95);
+  const std::string kNetUtilSummaryFileName = output_file_prefix +
+                                                ".netutil.summary";
+  FILE* netutil_summary_file = fopen(kNetUtilSummaryFileName.c_str(), "w");
+  fprintf(netutil_summary_file, "%lf %lf %lf\n", mean_util,
+              fifth_percentile_util, ninety_fifth_percentile_util);
+  fclose(netutil_summary_file);
+}
+
 void ProcessCostLogs(const std::string& output_file_prefix) {
   const std::string kCostTsFileName = output_file_prefix + ".cost.ts";
+  const std::string kAllCostFileName = output_file_prefix + ".cost.all";
   FILE* cost_ts_file = fopen(kCostTsFileName.c_str(), "w");
+  FILE* all_cost_file = fopen(kAllCostFileName.c_str(), "w");
   std::vector<double> cost_ts_data;
   // Log time series data for cost.
   int current_time = traffic_requests[0].arrival_time;
@@ -457,7 +525,7 @@ void ProcessCostLogs(const std::string& output_file_prefix) {
   for (int i = 0; i < traffic_requests.size(); ++i) {
     if (current_time != traffic_requests[i].arrival_time) {
       cost_ts_data.push_back(current_cost);
-      fprintf(cost_ts_file, "%d %.4lf %.4lf %.4lf %.4lf %.4lf\n", 
+      fprintf(cost_ts_file, "%d %lf %lf %lf %lf %lf\n", 
               current_time, current_cost, current_d_cost, current_e_cost,
               current_t_cost, current_sla_cost);
       current_time = traffic_requests[i].arrival_time;
@@ -469,20 +537,26 @@ void ProcessCostLogs(const std::string& output_file_prefix) {
     current_e_cost += energy_costs[i];
     current_t_cost += transit_costs[i];
     current_sla_cost += sla_costs[i];
+    fprintf(all_cost_file, "%d", current_time);
+    for (int j = 0; j < results[i].size(); ++j) {
+      fprintf(all_cost_file, " %d", results[i][j]);
+    }
+    fprintf(all_cost_file, " %lf %lf %lf %lf\n", energy_costs[i], transit_costs[i],
+            sla_costs[i], total_costs[i]);
   }
   cost_ts_data.push_back(current_cost);
-  fprintf(cost_ts_file, "%d %.4lf %.4lf %.4lf %.4lf %.4lf\n", 
+  fprintf(cost_ts_file, "%d %lf %lf %lf %lf %lf\n", 
           current_time, current_cost, current_d_cost, current_e_cost,
           current_t_cost, current_sla_cost);
   fclose(cost_ts_file);
-
+  fclose(all_cost_file);
   // Log mean, 5th, and 95th percentile of the total cost.
   const std::string kCostSummaryFileName = output_file_prefix + ".cost.summary";
   double mean_cost = GetMean(cost_ts_data);
   double fifth_percentile_cost = GetNthPercentile(cost_ts_data, 5);
   double ninety_fifth_percentile_cost = GetNthPercentile(cost_ts_data, 95);
   FILE* cost_summary_file = fopen(kCostSummaryFileName.c_str(), "w");
-  fprintf(cost_summary_file, "%.3lf %.3lf %.3lf\n", mean_cost,
+  fprintf(cost_summary_file, "%lf %lf %lf\n", mean_cost,
           fifth_percentile_cost, ninety_fifth_percentile_cost);
   fclose(cost_summary_file);
 }
@@ -490,11 +564,9 @@ void ProcessCostLogs(const std::string& output_file_prefix) {
 void ProcessStretchLogs(const std::string& output_file_prefix) {
   const std::string kStretchFileName = output_file_prefix + ".stretch";
   FILE* stretch_file = fopen(kStretchFileName.c_str(), "w");
-  printf("getting cdf\n");
   std::vector<std::pair<double, double>> cdf = GetCDF(stretches);
-  printf("got cdf\n");
   for (int i = 0; i < cdf.size(); ++i) {
-    fprintf(stretch_file, "%.3lf %.3lf\n", cdf[i].first, cdf[i].second);
+    fprintf(stretch_file, "%lf %lf\n", cdf[i].first, cdf[i].second);
   }
   fclose(stretch_file);
 }
