@@ -2,7 +2,7 @@
 
 # create directory with timestamp
 folder_name=$(date +%Y%m%d_%H%M%S)
-mkdir $folder_name
+mkdir -p /home/mfbari/middlebox-placement/src/$folder_name
 
 # start time instance 
 start_time_instance=0
@@ -26,10 +26,12 @@ do
   #echo $start_line " " $end_line
 
   sub_folder_name=$folder_name/run-$ti
-  mkdir -p $sub_folder_name
+  `mkdir -p /home/mfbari/middlebox-placement/src/$sub_folder_name`
 
   # copy all input files in the subfolder
   `cp middleman cplex_run topology middlebox-spec "$sub_folder_name"/`
   `sed -n "$start_line","$end_line"p traffic-request > "$sub_folder_name"/traffic-request`
 
+  # run the processes
+  (cd /home/mfbari/middlebox-placement/src/"$sub_folder_name" && `cat cplex_run` > output &)
 done
