@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
       fprintf(util_log_file, "%d ", current_time);
 
       for (;i < traffic_requests.size() && current_time == traffic_requests[i].arrival_time; ++i) {
+        traffic_requests[i].duration = 6000; // 300;
         current_traffic_requests.push_back(traffic_requests[i]);
       }
       current_time = traffic_requests[i].arrival_time;
