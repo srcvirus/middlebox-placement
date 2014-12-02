@@ -12,10 +12,12 @@ std::vector<std::vector<edge_endpoint> > graph;
 std::vector<std::vector<middlebox_instance> > deployed_mboxes;
 std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs,
 total_costs, stretches;
+std::vector<double> net_util;
 double per_core_cost, per_bit_transit_cost;
 double cost[MAXN][MAXN];
 int pre[MAXN][MAXN];
 int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
+int shortest_edge_path[MAXN][MAXN];
 std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
 solution_statistics stats;
 std::vector<std::unique_ptr<std::vector<int> > > all_results;
@@ -46,8 +48,10 @@ int main(int argc, char *argv[]) {
   }
   ComputeSolutionCosts(results);
   ComputeAllStretches(results);
+  ComputeNetworkUtilization(results);
   ProcessCostLogs(log_file_prefix);
   ProcessStretchLogs(log_file_prefix);
+  ProcessNetUtilizationLogs(log_file_prefix);
   return 0;
 }
 

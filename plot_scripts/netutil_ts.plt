@@ -6,15 +6,13 @@ set style fill solid border 0
 set xtics nomirror 
 set ytics nomirror
 
-set output "cost_time_series.pdf"
+set output "netutil_time_series.pdf"
 set xlabel "Time (s)"
-set ylabel "OPEX ($)"
+set ylabel "Network Utilization (%)"
 set key outside horizontal
 
 #set xr[0:10000]
-set yr[0:2.75]
+set yr[0:1.00]
 
-plot 'log.viterbi.cost.ts' using ((int($0)%500)==0?0.:0/0):xtic(1) notitle, \
-     '' using 4 t "Energy Cost", \
-     '' using 5 t "Transit Cost", \
-     '' using 6 t "SLA Violation Cost"
+plot 'log.viterbi.netutil.ts' using ((int($0)%500)==0?0.:0/0):xtic(1) notitle, \
+     '' using ($2*100) notitle
