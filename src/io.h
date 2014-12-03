@@ -50,6 +50,7 @@ std::unique_ptr<std::vector<std::vector<std::string> > > ReadCSVFile(
       current_line.push_back(token);
     }
     ret_vector->push_back(current_line);
+    printf("%d\n", ++row_number);
   }
   fclose(file_ptr);
   DEBUG("Parsed %d lines\n", static_cast<int>(ret_vector->size()));
@@ -68,6 +69,19 @@ void InitializeAllResults(const char *filename) {
     }
     DEBUG("\n");
     results.push_back(current_result);
+  }
+}
+
+void InitializeSolutionPaths(const char* filename) {
+  paths.clear();
+  auto csv_vector = ReadCSVFile(filename);
+  for (int i = 0; i < csv_vector->size(); ++i) {
+    std::vector<std::string>& row = (*csv_vector)[i];
+    std::vector<int> current_path;
+    for (auto& element : row) {
+      current_path.push_back(atoi(element.c_str()));
+    }
+    paths.push_back(current_path);
   }
 }
 

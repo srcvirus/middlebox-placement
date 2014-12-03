@@ -26,6 +26,7 @@ std::vector<std::vector<edge_endpoint> > graph;
 std::vector<std::vector<middlebox_instance> > deployed_mboxes;
 std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs,
     total_costs, stretches;
+std::vector<std::vector<int>> ingress_k, egress_k;
 std::vector<double> net_util;
 double per_core_cost, per_bit_transit_cost;
 double cost[MAXN][MAXN];
@@ -36,6 +37,7 @@ std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
 solution_statistics stats;
 std::vector<std::unique_ptr<std::vector<int> > > all_results;
 std::vector<std::vector<int> > results;
+std::vector<std::vector<int>> paths;
 middlebox fake_mbox("switch", "0", "0", TOSTRING(INF), "0.0");
 
 int main(int argc, char *argv[]) {
