@@ -75,7 +75,8 @@ int main(int argc, char *argv[]) {
     FILE *util_log_file = fopen("log.cplex.util.ts", "w");
 
     // print the node and edge count at the begining of the sequence file
-    fprintf(util_log_file, "%d %d\n", GetNodeCount(graph), GetEdgeCount(graph));
+    // fprintf(util_log_file, "%d %d\n", GetNodeCount(graph),
+    // GetEdgeCount(graph));
 
     for (int i = 0; i < traffic_requests.size();) {
       traffic_requests[i].duration = 6000; // 300;
@@ -86,6 +87,7 @@ int main(int argc, char *argv[]) {
       for (; i < traffic_requests.size() &&
                  current_time == traffic_requests[i].arrival_time;
            ++i) {
+        traffic_requests[i].duration = 6000; // 300;
         current_traffic_requests.push_back(traffic_requests[i]);
       }
       current_time = traffic_requests[i].arrival_time;
@@ -104,10 +106,11 @@ int main(int argc, char *argv[]) {
            << "% Traffic processed." << endl;
 
       // cost log
+      fprintf(cost_log_file, "%lf ", opex);
       for (double cost : opex_breakdown) {
         fprintf(cost_log_file, "%lf ", cost);
       }
-      fprintf(cost_log_file, "%lf %lf\n", opex, running_time);
+      fprintf(cost_log_file, "\n");
 
       // sequence log
       for (int i = 0; i < current_traffic_requests.size(); ++i) {
