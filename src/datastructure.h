@@ -12,6 +12,7 @@
 #define INF 99999999
 #define MAXN 1000
 #define NIL -1
+#define EPS 1e-9
 
 #define NUM_CORES_PER_SERVER 16 
 #define SERVER_IDLE_ENERGY 0.0  // Kilo Watt
@@ -181,6 +182,8 @@ extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > >
     path_cache;
 extern std::vector<double> deployment_costs, energy_costs, 
        transit_costs, sla_costs, total_costs, stretches;
+extern std::vector<std::vector<int>> ingress_k;
+extern std::vector<std::vector<int>> egress_k;
 extern std::vector<double> net_util;
 extern solution_statistics stats;
 extern double per_core_cost, per_bit_transit_cost;
@@ -190,4 +193,5 @@ extern int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 extern int shortest_edge_path[MAXN][MAXN];
 extern middlebox fake_mbox;
 extern std::vector<std::vector<int> > results;
+extern std::vector<std::vector<int>> paths;
 #endif  // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_

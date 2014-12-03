@@ -12,12 +12,13 @@ set border 3 back linestyle 80
 set xtics nomirror
 set ytics nomirror
 
-set style fill pattern border
+set style fill pattern border 1
 set output "cost_topology.pdf"
 set xlabel "Topology"
 set ylabel "Mean OPEX($)"
 set key top right
 
-set yr[50:400]
+set yr[0:2.75]
 
-plot 'cost_topology.dat' using 2:3:4:xtic(1) title col fs pattern 2
+plot 'cost_topology.dat' using 2:3:4:xtic(1) title col fs pattern 2, \
+      '' using 5:6:7:xtic(1) title col fs pattern 4

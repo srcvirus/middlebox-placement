@@ -12,6 +12,7 @@ std::vector<std::vector<edge_endpoint> > graph;
 std::vector<std::vector<middlebox_instance> > deployed_mboxes;
 std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs,
 total_costs, stretches;
+std::vector<std::vector<int>> ingress_k, egress_k;
 std::vector<double> net_util;
 double per_core_cost, per_bit_transit_cost;
 double cost[MAXN][MAXN];
@@ -22,10 +23,12 @@ std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
 solution_statistics stats;
 std::vector<std::unique_ptr<std::vector<int> > > all_results;
 std::vector<std::vector<int> > results;
+std::vector<std::vector<int>> paths;
 middlebox fake_mbox("switch", "0", "0", TOSTRING(INF), "0.0");
 
 int main(int argc, char *argv[]) {
   auto arg_maps = ParseArgs(argc, argv);
+  bool processing_cplex = false;
   std::string log_file_prefix = "log";
   for (auto argument : *arg_maps) {
     if (argument.first == "--per_bit_transit_cost") {
@@ -42,16 +45,29 @@ int main(int argc, char *argv[]) {
     else if (argument.first == "--log_file_prefix") {
       log_file_prefix = argument.second;
     }
+    else if (argument.first == "--cplex_solution_path_file") {
+      InitializeSolutionPaths(argument.second.c_str());
+      processing_cplex = true;
+    }
   }
   for (int i = 0; i < traffic_requests.size(); ++i) {
     traffic_requests[i].duration = 6000;
   }
   ComputeSolutionCosts(results);
-  ComputeAllStretches(results);
-  ComputeNetworkUtilization(results);
+  if (!processing_cplex) {
+    ComputeAllStretches(results);
+    ComputeNetworkUtilization(results);
+    ComputeKHops(results);
+  } else {
+    CplexComputeAllStretches(paths);
+    CplexComputeNetworkUtilization(paths);
+    CplexComputeKHops(results,paths);
+  }
   ProcessCostLogs(log_file_prefix);
   ProcessStretchLogs(log_file_prefix);
   ProcessNetUtilizationLogs(log_file_prefix);
+  ProcessServerUtilizationLogs(log_file_prefix);
+  ProcessKHopsLogs(log_file_prefix);
   return 0;
 }
 
