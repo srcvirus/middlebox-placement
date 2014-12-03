@@ -678,12 +678,27 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     //^^^^^CPLEX Decision Variable^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     // wtuv_u_v = 1, if logical link (u, v) of traffic t uses physical link (_u,
     // _v)
+    /*
     IloIntVar5dArray wtuv_u_v(env, kTrafficCount);
     for (int t = 0; t < kTrafficCount; ++t) {
       wtuv_u_v[t] = IloIntVar4dArray(env, trafficNodeCount[t]);
       for (int u = 0; u < trafficNodeCount[t]; ++u) {
         wtuv_u_v[t][u] = IloIntVar3dArray(env, trafficNodeCount[t]);
         for (int v = 0; v < trafficNodeCount[t]; ++v) {
+          wtuv_u_v[t][u][v] = IloIntVar2dArray(env, kSwitchCount);
+          for (int _u = 0; _u < kSwitchCount; ++_u) {
+            wtuv_u_v[t][u][v][_u] = IloIntVarArray(env, kSwitchCount, 0, 1);
+          }
+        }
+      }
+    }
+    */
+    IloIntVar5dArray wtuv_u_v(env, kTrafficCount);
+    for (int t = 0; t < kTrafficCount; ++t) {
+      wtuv_u_v[t] = IloIntVar4dArray(env, trafficNodeCount[t]);
+      for (int u = 0; u < trafficNodeCount[t]; ++u) {
+        wtuv_u_v[t][u] = IloIntVar3dArray(env, nbr[t].size());
+        for (int v : nbr[t][u]) {
           wtuv_u_v[t][u][v] = IloIntVar2dArray(env, kSwitchCount);
           for (int _u = 0; _u < kSwitchCount; ++_u) {
             wtuv_u_v[t][u][v][_u] = IloIntVarArray(env, kSwitchCount, 0, 1);
@@ -1006,7 +1021,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
 
     // print ym
-    cout << endl;
+    //cout << endl;
     IloNumArray ym_vals(env, kMboxCount);
     cplex.getValues(ym, ym_vals);
     std:string type = "";
@@ -1026,7 +1041,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
 
     // print ztn_n
-    cout << endl;
+    //cout << endl;
     for (int t = 0; t < kTrafficCount; ++t) {
       for (int n = 0; n < trafficNodeCount[t]; ++n) {
         IloNumArray ztn_n_vals(env, kSwitchCount);
@@ -1039,7 +1054,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
     
-    cout << endl;
+    //print wtuv_u_v
+    //cout << endl;
     for (int t = 0; t < kTrafficCount; ++t) {
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
         for (int n2 : nbr[t][n1]) {
@@ -1078,7 +1094,6 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         used_cpu += ym_vals2[m] * cmr[m][0];
       }
       per_server_energy = POWER_CONSUMPTION_ONE_SERVER(used_cpu) * duration_hours * PER_UNIT_ENERGY_PRICE;
-      cout << " s enr cost = " << per_server_energy << endl;
       enrCost += per_server_energy;
     }
     opex_breakdown.push_back(enrCost);
