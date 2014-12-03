@@ -3,6 +3,7 @@
 #include "datastructure.h"
 
 #include <algorithm>
+#include <stack>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string>
@@ -467,6 +468,20 @@ void ComputeAllStretches(const std::vector<std::vector<int>> &solutions) {
   }
 }
 
+void CplexComputeAllStretches(
+  const std::vector<std::vector<int>>& solution_paths) {
+  for (auto& path : solution_paths) {
+    int embedded_path_length = path.size() - 1;
+    int source = path[0];
+    int destination = path[embedded_path_length];
+    int shortest_path_length = ComputeShortestPath(
+                                 source, destination)->size() - 1;
+    double stretch = static_cast<double>(embedded_path_length) / 
+                      static_cast<double>(shortest_path_length);
+    stretches.push_back(stretch);                      
+  }
+}
+
 void ComputeNetworkUtilization(
   const std::vector<std::vector<int>>& solutions) {
   const long kNetworkCapacity = GetTotalNetworkBandwidth();
@@ -475,6 +490,83 @@ void ComputeNetworkUtilization(
     net_util.push_back(static_cast<double>(bandwidth_usage) /
                          static_cast<double>(kNetworkCapacity));
   }
+}
+
+void CplexComputeNetworkUtilization(
+  const std::vector<std::vector<int>>& solution_paths) {
+  int i = 0;
+  const long kNetworkCapacity = GetTotalNetworkBandwidth();
+  for (auto& t_request : traffic_requests) {
+    long bandwidth_usage = (solution_paths[i++].size() - 1) *
+                             t_request.min_bandwidth;
+    net_util.push_back(static_cast<double>(bandwidth_usage) /
+                         static_cast<double>(kNetworkCapacity));
+  }
+}
+
+void ComputeKHops(
+  const std::vector<std::vector<int>>& solutions) {
+ ingress_k.resize(solutions.size());
+ egress_k.resize(solutions.size());
+ for (int i = 0; i < solutions.size(); ++i) {
+   int ingress = solutions[i].front();
+   int egress = solutions[i].back();
+   int ihops = 0, ehops = 0;
+   for (int j = 1; j < solutions[i].size() - 1; ++j) {
+     ihops += ComputeShortestPath(solutions[i][j - 1], solutions[i][j])->size() - 1;
+     ingress_k[i].push_back(ihops);
+   }
+   for (int j = solutions[i].size() - 1; j >= 1; --j) {
+     ehops += ComputeShortestPath(solutions[i][j + 1], solutions[i][j])->size() - 1;
+     egress_k[i].push_back(ehops);
+   }
+ }
+}
+
+void CplexComputeKHops(
+  const std::vector<std::vector<int>>& solutions,
+  const std::vector<std::vector<int>>& solution_paths) {
+  ingress_k.resize(solutions.size());
+  egress_k.resize(solutions.size());
+  for (int i = 0; i < solutions.size(); ++i) {
+    int ingress = solution_paths[i].front();
+    int egress = solution_paths[i].back();
+    int ihops = 0, ehops = 0;
+    int kk = 0;
+    for (int j = 1; j < solutions[i].size() - 1; ++j) {
+      for ( ; kk < solution_paths[i].size() - 1; ++kk) {
+        if (solution_paths[i][kk] == solutions[i][j]) break;
+      }
+      ihops += kk;
+      ehops += solution_paths[i].size() - kk - 1;
+      ingress_k[i].push_back(ihops);
+      egress_k[i].push_back(ehops);
+    }
+  }
+}
+
+void ProcessKHopsLogs(const std::string& output_file_prefix) {
+  std::vector<int> ihops, ehops;
+  const std::string kIngressKHopsFileName = output_file_prefix +
+                                              ".ingress_k.cdf";
+  const std::string kEgressKHopsFileName = output_file_prefix +
+                                             ".egress_k.cdf";
+  FILE* ingress_k_file = fopen(kIngressKHopsFileName.c_str(), "w");
+  FILE* egress_k_file = fopen(kEgressKHopsFileName.c_str(), "w");
+  for (int i = 0; i < traffic_requests.size(); ++i) {
+    for (auto& elem : ingress_k[i]) ihops.push_back(elem);
+    for (auto& elem : egress_k[i]) ehops.push_back(elem);
+  }
+  std::vector<std::pair<int,double>> ingress_k_cdf = GetCDF(ihops);
+  std::vector<std::pair<int,double>> egress_k_cdf = GetCDF(ehops);
+  for (auto& cdf : ingress_k_cdf) {
+    fprintf(ingress_k_file, "%d %lf\n", cdf.first, cdf.second);
+  }
+  for (auto& cdf : egress_k_cdf) {
+    fprintf(egress_k_file, "%d %lf\n", cdf.first, cdf.second);
+  }
+  fclose(ingress_k_file);
+  fclose(egress_k_file);
 }
 
 void ProcessNetUtilizationLogs(const std::string& output_file_prefix) {
@@ -571,163 +663,106 @@ void ProcessStretchLogs(const std::string& output_file_prefix) {
   fclose(stretch_file);
 }
 
-void ProcessStats(solution_statistics &s,
-                  const std::string &output_file_prefix) {
-  const std::string kCostTsFileName = output_file_prefix + ".cost.ts";
-  const std::string kCostSummaryFileName = output_file_prefix + ".cost.summary";
-  const std::string kUtilTsFileName = output_file_prefix + ".util.ts";
-  const std::string kFragmentationFileName = output_file_prefix + ".frag.ts";
-  // Process cost data.
-  FILE *cost_ts_file = fopen(kCostTsFileName.c_str(), "w");
-  int current_time = 0;
-  std::vector<double> cost_data;
-  // std::vector<double> global_cost_data;
-  double current_cost = 0.0;
-  s.t_stats.push_back(traffic_statistics(INF, INF));
-
-  // First write the time series data to file. For each time instance write the
-  // sum of costs from all traffic.
-  for (auto &t_stats : s.t_stats) {
-    if (current_time != t_stats.arrival_time) {
-      cost_data.push_back(current_cost);
-      fprintf(cost_ts_file, "%d %.3lf\n", current_time, current_cost);
-      current_time = t_stats.arrival_time;
-      current_cost = 0.0;
-    }
-    current_cost += t_stats.cost;
-  }
-  fclose(cost_ts_file);
-  s.t_stats.pop_back();
-
-  // Write the mean, 5th, and 95th percentile of the cost to file.
-  double mean_cost = GetMean(cost_data);
-  double fifth_percentile_cost = GetNthPercentile(cost_data, 5);
-  double ninety_fifth_percentile_cost = GetNthPercentile(cost_data, 95);
-  FILE *cost_summary_file = fopen(kCostSummaryFileName.c_str(), "w");
-  fprintf(cost_summary_file, "%.3lf %.3lf %.3lf\n", mean_cost,
-          fifth_percentile_cost, ninety_fifth_percentile_cost);
-  fclose(cost_summary_file);
-
+void ProcessServerUtilizationLogs(const std::string& output_file_prefix) {
   // Process utilization data. Also derive fragmentation data from utilization
   // data: fragmentation = 1 - utilization.
+  const std::string kUtilTsFileName = output_file_prefix + ".serverutil.ts";
+  const std::string kFragmentationFileName = output_file_prefix +
+                                               ".serverfrag.ts";
   FILE *util_ts_file = fopen(kUtilTsFileName.c_str(), "w");
   FILE *fragmentation_ts_file = fopen(kFragmentationFileName.c_str(), "w");
-  current_time = 0;
+  int current_time = traffic_requests[0].arrival_time;
   std::vector<double> util_data;
-  s.server_stats.emplace_back(INF, NIL, INF);
-  DEBUG("bingo\n");
+  stats.server_stats.emplace_back(INF, NIL, INF);
   std::vector<std::vector<double>> per_server_util;
   per_server_util.resize(graph.size());
-  for (auto &server_stat : s.server_stats) {
+  for (auto &server_stat : stats.server_stats) {
     if (server_stat.server_id != NIL) {
-      per_server_util[server_stat.server_id].push_back(server_stat.utilization);
+      if (fabs(server_stat.utilization - 0.0) > EPS) { 
+        per_server_util[server_stat.server_id].push_back(
+                                                 server_stat.utilization);
+      }
     }
     if (current_time != server_stat.timestamp) {
       double mean_util = GetMean(util_data);
       double fifth_percentile_util = GetNthPercentile(util_data, 5);
       double ninety_fifth_percentile_util = GetNthPercentile(util_data, 95);
-      fprintf(util_ts_file, "%d %.3lf %.3lf %.3lf\n", current_time, mean_util,
+      fprintf(util_ts_file, "%d %lf %lf %lf\n", current_time, mean_util,
               fifth_percentile_util, ninety_fifth_percentile_util);
       double mean_fragmentation = 1 - mean_util;
       double fifth_percentile_fragmentation = 1 - fifth_percentile_util;
       double ninety_fifth_percentile_fragmentation =
           1 - ninety_fifth_percentile_util;
-      fprintf(fragmentation_ts_file, "%d %.3lf %.3lf %.3lf\n", current_time,
+      fprintf(fragmentation_ts_file, "%d %lf %lf %lf\n", current_time,
               mean_fragmentation, fifth_percentile_fragmentation,
               ninety_fifth_percentile_fragmentation);
       current_time = server_stat.timestamp;
       util_data.clear();
     }
-    util_data.push_back(server_stat.utilization);
+    if (fabs(server_stat.utilization - 0.0) > EPS) {
+      util_data.push_back(server_stat.utilization);
+    }
   }
   fclose(util_ts_file);
   fclose(fragmentation_ts_file);
 
   // Process per server utilization data.
   const std::string kPerServerUtilFileName =
-      output_file_prefix + ".log.per_server_util";
-  int util_cdf[101] = {0};
+      output_file_prefix + ".per_server_util";
   FILE *per_server_util_file = fopen(kPerServerUtilFileName.c_str(), "w");
+  std::vector<double> mean_util_data;
   for (int i = 0; i < per_server_util.size(); ++i) {
     if (per_server_util[i].size() > 0) {
       double mean_util = GetMean(per_server_util[i]);
       double fifth_percentile_util = GetNthPercentile(per_server_util[i], 5);
       double ninety_fifth_percentile_util =
           GetNthPercentile(per_server_util[i], 95);
-      fprintf(per_server_util_file, "Server-%d %.3f %.3f %.3f\n", i, mean_util,
+      fprintf(per_server_util_file, "Server-%d %lf %lf %lf\n", i, mean_util,
               fifth_percentile_util, ninety_fifth_percentile_util);
-      util_cdf[static_cast<int>(mean_util * 100.0)]++;
+      mean_util_data.push_back(mean_util);
     }
   }
   fclose(per_server_util_file);
 
   // Process CDF of mean server utilization.
-  const std::string kServerUtilCdfFile = output_file_prefix + ".log.util.cdf";
+  const std::string kServerUtilCdfFile = output_file_prefix + ".sutil.cdf";
   FILE *server_util_cdf_file = fopen(kServerUtilCdfFile.c_str(), "w");
-  int frequency_sum = 0;
-  for (int i = 1; i <= 100; ++i) {
-    util_cdf[i] += util_cdf[i - 1];
-    frequency_sum = util_cdf[i];
-  }
-  for (int i = 1; i <= 100; ++i) {
-    double util = static_cast<double>(i) / 100.0;
-    double cdf =
-        static_cast<double>(util_cdf[i]) / static_cast<double>(frequency_sum);
-    fprintf(server_util_cdf_file, "%.3lf %.3lf\n", util, cdf);
+  std::vector<std::pair<double, double>> util_cdf = GetCDF(mean_util_data);
+  for (auto& cdf_data : util_cdf) {
+    fprintf(server_util_cdf_file, "%lf %lf\n", cdf_data.first, cdf_data.second);
   }
   fclose(server_util_cdf_file);
+}
 
-  // Percentage of middleboxes deployed withing k distance of the ingress/egress
-  const std::string kIngressK = output_file_prefix + ".ingress.k";
-  const std::string kEgressK = output_file_prefix + ".egress.k";
-  FILE *ingress_k_cdf_file = fopen(kIngressK.c_str(), "w");
-  FILE *egress_k_cdf_file = fopen(kEgressK.c_str(), "w");
-  std::vector<int> ingress_k(graph.size() + 1, 0);
-  std::vector<int> egress_k(graph.size() + 1, 0);
-  int num_elements = 0;
-  for (auto &t_stats : s.t_stats) {
-    num_elements += t_stats.ingress_hops.size();
-    for (auto &hops : t_stats.ingress_hops) {
-      ingress_k[hops]++;
+std::vector<int> CplexComputePath(const std::vector<std::pair<int,int>>& edges,
+                                  const std::vector<int> sequence) {
+  int source = sequence.front();
+  int destination = sequence.back();
+  std::vector<std::vector<int>> adj;
+  adj.resize(graph.size());
+  for (auto& edge : edges) {
+    adj[edge.first].push_back(edge.second);
+  }
+  std::stack<int> s;
+  std::vector<int> path;
+  s.push(source);
+  int current_node = source;
+  while(true) {
+    if (adj[current_node].empty()) {
+      path.push_back(current_node);
+      if (!s.empty()) {
+        current_node = s.top();
+        s.pop();
+      } else break;
+    } else {
+      s.push(current_node);
+      int neighbor = adj[current_node].back();
+      adj[current_node].pop_back();
+      current_node = neighbor;
     }
-    for (auto &hops : t_stats.egress_hops) {
-      egress_k[hops]++;
-    }
   }
-  for (int i = 1; i <= graph.size(); ++i) {
-    ingress_k[i] += ingress_k[i - 1];
-    egress_k[i] += egress_k[i - 1];
-  }
-  for (int i = 0; i <= graph.size(); ++i) {
-    double cdf =
-        static_cast<double>(ingress_k[i]) / static_cast<double>(num_elements);
-    fprintf(ingress_k_cdf_file, "%d %.3lf\n", i, cdf);
-    cdf = static_cast<double>(egress_k[i]) / static_cast<double>(num_elements);
-    fprintf(egress_k_cdf_file, "%d %.3lf\n", i, cdf);
-  }
-  fclose(ingress_k_cdf_file);
-  fclose(egress_k_cdf_file);
-
-  // Process stretch data.
-  const std::string kStretchFileName = output_file_prefix + ".stretch.cdf";
-  FILE *stretch_file = fopen(kStretchFileName.c_str(), "w");
-  const int kNumTraffic = s.t_stats.size();
-  double max_stretch = -1;
-  for (auto &t_stats : s.t_stats) {
-    if (max_stretch < t_stats.stretch) max_stretch = t_stats.stretch;
-  }
-  std::vector<int> stretch_cdf(static_cast<int>(max_stretch * 100.0), 0.0);
-  for (auto &t_stats : s.t_stats) {
-    ++stretch_cdf[static_cast<int>(t_stats.stretch * 100.0)];
-  }
-  for (int i = 1; i < stretch_cdf.size(); ++i) {
-    stretch_cdf[i] += stretch_cdf[i - 1];
-    double I = static_cast<double>(i) / 100.0;
-    double cdf =
-        static_cast<double>(stretch_cdf[i]) / static_cast<double>(kNumTraffic);
-    fprintf(stretch_file, "%.3lf %.3lf\n", I, cdf);
-  }
-  fclose(stretch_file);
+  std::reverse(path.begin(), path.end());
+  return path;
 }
 
 #endif  // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
