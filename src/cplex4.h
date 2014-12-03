@@ -6,6 +6,7 @@
 #include <string>
 #include <cmath>
 #include <climits>
+#include <utility>
 
 #include <ilcplex/ilocplex.h>
 ILOSTLBEGIN
@@ -49,7 +50,7 @@ void print_IloInt3dArray(IloInt3dArray a, int dimension1, int dimension2,
 void run_cplex(std::vector<traffic_request> traffic_requests, 
               double &opex, std::vector<double> &opex_breakdown,
               double &running_time, 
-              std::vector<int> *sequence, int *delays,
+              std::vector<int> *sequence, std::vector<std::pair <int, int> > *path, int *delays,
               std::vector<int> &utilization,
               string topology_filename){
   IloEnv env;
@@ -754,21 +755,25 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         }
       }
     }
-    /*
+    //---------------------------------------------------------------------
+    //cout << "cnst flow" << endl;
+    //-----CPLEX Constraint------------------------------------------------
+    // ADD: every traffic link must be embedded
     for (int t = 0; t < kTrafficCount; ++t) {
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
         for (int n2 : nbr[t][n1]) {
+          IloExpr sum(env);
           for (int _u = 0; _u < kSwitchCount; ++_u) {
             for (int _v : __nbr[_u]) {
-              model.add(IloIfThen(env, ztn_n[t][n1][_u] == 0 || ztn_n[t][n2][_v] == 0, wtuv_u_v[t][n1][n2][_u][_v] == 0));
+              sum += wtuv_u_v[t][n1][n2][_u][_v];
             }
           }
+          model.add(sum > 0);
         }
       }
     }
-    */
     //---------------------------------------------------------------------
-    //cout << "cnst flow" << endl;
+    //cout << "cnst every link" << endl;
 
     //-----CPLEX Constraint------------------------------------------------
     // ADD: middlebox processing capacity constraint
@@ -1066,6 +1071,9 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
                 value = cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]);
                 if (value == 1) {
                   DEBUG("Traffic %d link (%d, %d) mapped to phy. link (%d, %d)\n", t, n1, n2, _u, _v);
+                  if (_u < kInitialSwitchCount && _v < kInitialSwitchCount) {
+                    path[t].push_back(std::make_pair(_u, _v));
+                  }
                 }
               }
             }
