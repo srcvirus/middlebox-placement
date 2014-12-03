@@ -3,6 +3,7 @@
 #include "datastructure.h"
 
 #include <algorithm>
+#include <assert.h>
 #include <stack>
 #include <stdarg.h>
 #include <stdio.h>
@@ -740,8 +741,21 @@ std::vector<int> CplexComputePath(const std::vector<std::pair<int,int>>& edges,
   int destination = sequence.back();
   std::vector<std::vector<int>> adj;
   adj.resize(graph.size());
+  std::vector<int> indeg(graph.size(), 0);
+  std::vector<int> outdeg(graph.size(), 0);
   for (auto& edge : edges) {
     adj[edge.first].push_back(edge.second);
+    ++outdeg[edge.first];
+    ++indeg[edge.second];
+  }
+  for (int i = 0; i < graph.size(); ++i) {
+    if ((indeg[i] + outdeg[i]) != 0) {
+      if (i != source || i != destination) {
+        assert(indeg[i] == outdeg[i]);
+      } else {
+        assert(abs(indeg[i] - outdeg[i]) == 1);
+      }
+    }
   }
   std::stack<int> s;
   std::vector<int> path;
