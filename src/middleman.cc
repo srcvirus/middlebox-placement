@@ -102,10 +102,11 @@ int main(int argc, char *argv[]) {
       cout << processed_traffic*100.0/traffic_requests.size() << "% Traffic processed." << endl;
 
       //cost log
+      fprintf(cost_log_file, "%lf ", opex);
       for (double cost : opex_breakdown) {
         fprintf(cost_log_file, "%lf ", cost);
       }
-      fprintf(cost_log_file, "%lf %lf\n", opex, running_time);
+      fprintf(cost_log_file, "\n");
 
       //sequence log
       for (int i = 0; i < current_traffic_requests.size(); ++i) {
