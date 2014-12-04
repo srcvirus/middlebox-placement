@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
     // files to write output
     FILE *cost_log_file = fopen("log.cplex.cost.ts", "w");
     FILE *sequence_log_file = fopen("log.cplex.sequences", "w");
+    FILE *path_log_file = fopen("log.cplex.paths", "w");
     FILE *util_log_file = fopen("log.cplex.util.ts", "w");
 
     // print the node and edge count at the begining of the sequence file
@@ -95,13 +96,14 @@ int main(int argc, char *argv[]) {
       current_time = traffic_requests[i].arrival_time;
 
       std::vector<int> sequence[current_traffic_requests.size()];
+      std::vector<std::pair <int, int> > path[current_traffic_requests.size()];
       int delays[current_traffic_requests.size()];
       std::vector<double> opex_breakdown;
       std::vector<int> utilization;
 
-      run_cplex(current_traffic_requests, opex, opex_breakdown, running_time,
-                sequence, delays, utilization, topology_filename);
-
+      run_cplex(current_traffic_requests, opex, opex_breakdown, 
+                running_time, sequence, path, delays, utilization, topology_filename);
+      
       processed_traffic += current_traffic_requests.size();
 
       cout << processed_traffic * 100.0 / traffic_requests.size()
@@ -123,8 +125,43 @@ int main(int argc, char *argv[]) {
             fprintf(sequence_log_file, ",");
           }
         }
-        // fprintf(sequence_log_file, "%d ", delays[i]);
         fprintf(sequence_log_file, "\n");
+      }
+
+      //path log
+      for (int t = 0, current, remove_index; t < current_traffic_requests.size(); ++t) {
+        cout << "processing traffic " << t << endl;
+        traffic_request tr = current_traffic_requests[t];
+        current = tr.source;
+        fprintf(path_log_file, "%d", current);
+
+        std::vector<std::pair <int, int> > pairs = path[t];
+
+        for (std::pair<int, int> p : pairs) {
+          cout << "(" << p.first << ", " << p.second << ") ";
+        }
+        cout << endl;
+        cout << "current " << current << endl;
+
+        //while (!pairs.empty()) {
+        int loop = 0;
+        while (current != tr.destination) {
+          loop++;
+          remove_index = -1;
+          for (int j = 0; j < pairs.size(); ++j) {
+            if (current == pairs[j].first) {
+              current = pairs[j].second;
+              cout << "current " << current << endl;
+              fprintf(path_log_file, ",%d", current);
+              remove_index = j;
+              break;
+            }
+          }
+          //pairs.erase(pairs.begin() + remove_index);
+          if (loop == 9)
+            break;
+        }
+        fprintf(path_log_file, "\n");
       }
 
       // utilization log
@@ -134,8 +171,9 @@ int main(int argc, char *argv[]) {
       fprintf(util_log_file, "\n");
 
       fflush(cost_log_file);
-      fflush(sequence_log_file);
-      fflush(util_log_file);
+      fflush(sequence_log_file);  
+      fflush(path_log_file);
+      fflush(util_log_file);    
 
       current_traffic_requests.clear();
       // exit(0);
@@ -144,6 +182,7 @@ int main(int argc, char *argv[]) {
     // close all the output files
     fclose(cost_log_file);
     fclose(sequence_log_file);
+    fclose(path_log_file);
     fclose(util_log_file);
 
   } else if (algorithm == "viterbi") {
