@@ -50,7 +50,6 @@ std::unique_ptr<std::vector<std::vector<std::string> > > ReadCSVFile(
       current_line.push_back(token);
     }
     ret_vector->push_back(current_line);
-    printf("%d\n", ++row_number);
   }
   fclose(file_ptr);
   DEBUG("Parsed %d lines\n", static_cast<int>(ret_vector->size()));

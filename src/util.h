@@ -750,7 +750,7 @@ std::vector<int> CplexComputePath(const std::vector<std::pair<int,int>>& edges,
   }
   for (int i = 0; i < graph.size(); ++i) {
     if ((indeg[i] + outdeg[i]) != 0) {
-      if (i != source || i != destination) {
+      if (i != source && i != destination) {
         assert(indeg[i] == outdeg[i]);
       } else {
         assert(abs(indeg[i] - outdeg[i]) == 1);
