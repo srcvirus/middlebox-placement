@@ -87,22 +87,21 @@ int main(int argc, char *argv[]) {
       fprintf(cost_log_file, "%d ", current_time);
       fprintf(util_log_file, "%d ", current_time);
 
-      for (; i < traffic_requests.size() &&
-                 current_time == traffic_requests[i].arrival_time;
-           ++i) {
+      for (; i < traffic_requests.size() && current_time == traffic_requests[i].arrival_time; ++i) {
         traffic_requests[i].duration = 6000; // 300;
         current_traffic_requests.push_back(traffic_requests[i]);
       }
       current_time = traffic_requests[i].arrival_time;
 
       std::vector<int> sequence[current_traffic_requests.size()];
-      std::vector<std::pair <int, int> > path[current_traffic_requests.size()];
+      std::vector<std::pair <int, int> > edges[current_traffic_requests.size()];
+      std::vector<std::pair <int, int> > all_edges[current_traffic_requests.size()];
       int delays[current_traffic_requests.size()];
       std::vector<double> opex_breakdown;
       std::vector<int> utilization;
 
       run_cplex(current_traffic_requests, opex, opex_breakdown, 
-                running_time, sequence, path, delays, utilization, topology_filename);
+                running_time, sequence, edges, all_edges, delays, utilization, topology_filename);
       
       processed_traffic += current_traffic_requests.size();
 
@@ -116,9 +115,16 @@ int main(int argc, char *argv[]) {
       }
       fprintf(cost_log_file, "\n");
 
-      // sequence log
+      // sequence & path log
       for (int i = 0; i < current_traffic_requests.size(); ++i) {
+        // sequence
         std::vector<int> seq = sequence[i];
+        
+        for (int s : seq) {
+          cout << s << " ";
+        }
+        cout << endl;
+        
         for (int j = 0; j < seq.size(); ++j) {
           fprintf(sequence_log_file, "%d", seq[j]);
           if (j < seq.size() - 1) {
@@ -126,8 +132,31 @@ int main(int argc, char *argv[]) {
           }
         }
         fprintf(sequence_log_file, "\n");
+
+        // path
+        std::vector<std::pair <int, int> > edge_list = edges[i];
+        std::vector<std::pair <int, int> > all_edge_list = all_edges[i];
+        
+        for (std::pair<int, int> edge: edge_list) {
+          cout << "(" << edge.first << ", " << edge.second << ") ";
+        }
+        cout << endl;
+        for (std::pair<int, int> edge: all_edge_list) {
+          cout << "(" << edge.first << ", " << edge.second << ") ";
+        }
+        cout << endl;
+        
+        std::vector<int> path = CplexComputePath(edge_list, seq);
+        for (int j = 0; j < path.size(); ++j) {
+          fprintf(path_log_file, "%d", path[j]);
+          if (j < path.size() - 1) {
+            fprintf(path_log_file, ",");
+          }
+        }
+        fprintf(path_log_file, "\n");
       }
 
+      /*
       //path log
       for (int t = 0, current, remove_index; t < current_traffic_requests.size(); ++t) {
         cout << "processing traffic " << t << endl;
@@ -163,6 +192,7 @@ int main(int argc, char *argv[]) {
         }
         fprintf(path_log_file, "\n");
       }
+      */
 
       // utilization log
       for (int cores : utilization) {

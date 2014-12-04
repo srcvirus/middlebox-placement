@@ -759,7 +759,6 @@ std::vector<int> CplexComputePath(const std::vector<std::pair<int,int>>& edges,
   }
   std::stack<int> s;
   std::vector<int> path;
-  s.push(source);
   int current_node = source;
   while(true) {
     if (adj[current_node].empty()) {
