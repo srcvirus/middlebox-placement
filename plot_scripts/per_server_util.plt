@@ -12,12 +12,13 @@ set border 3 back linestyle 80
 set xtics rotate by 45 right 
 set ytics nomirror
 
-set style fill pattern border
+set style fill pattern border 1
 set output "per_server_util.pdf"
 set xlabel "Server ID"
 set ylabel "Mean Utilization"
-set key top right
+set key outside horizontal
 
-set yr[0:1.25]
+set yr[0:1.05]
 
-plot 'log.log.per_server_util' using 2:3:4:xtic(1) title col  fs pattern 2
+plot 'log.viterbi.per_server_util' using 2:3:4:xtic(1) title "Heuristic Solution"  fs pattern 2, \
+     'log.cplex.per_server_util' using 2:3:4:xtic(1) title "CPLEX Solution" fs pattern 5

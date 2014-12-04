@@ -15,11 +15,10 @@ set style line 3 lt rgb "#5060D0" lw 1 pt 2
 set style line 4 lt rgb "#F25900" lw 1 pt 9
 
 set output "ingress_k_cdf.pdf"
-set xlabel "Utilization"
+set xlabel "Hop Distance of Middlebox from Ingress Switch"
 set ylabel "CDF"
-set key top right
+set key outside horizontal
 
-set xr[0:12]
-set yr[0:1.25]
+set yr[0:1.05]
 
-plot "log.ingress.k" using 1:2 title "Heuristic Solution" w line ls 2
+plot "log.viterbi.ingress_k.cdf" using 1:2 title "Heuristic Solution" w line ls 2

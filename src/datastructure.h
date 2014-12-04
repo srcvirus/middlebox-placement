@@ -1,6 +1,7 @@
 #ifndef MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
 #define MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
 
+#include <list>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -178,12 +179,14 @@ extern std::vector<traffic_request> traffic_requests;
 extern std::vector<node> nodes;
 extern std::vector<std::vector<edge_endpoint> > graph;
 extern std::vector<std::vector<middlebox_instance> > deployed_mboxes;
+extern std::list<int> mbox_count;
 extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > >
     path_cache;
 extern std::vector<double> deployment_costs, energy_costs, 
        transit_costs, sla_costs, total_costs, stretches;
 extern std::vector<std::vector<int>> ingress_k;
 extern std::vector<std::vector<int>> egress_k;
+extern std::vector<int> num_service_points;
 extern std::vector<double> net_util;
 extern solution_statistics stats;
 extern double per_core_cost, per_bit_transit_cost;

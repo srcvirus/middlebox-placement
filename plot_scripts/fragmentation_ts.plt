@@ -17,9 +17,10 @@ set style line 4 lt rgb "#F25900" lw 2 pt 9
 set output "fragmentation_time_series.pdf"
 set xlabel "Time (s)"
 set ylabel "Mean Fragmentation"
-set key top right
+set key outside horizontal 
 
 set xr[0:10000]
-set yr[0:1]
+set yr[0:.3]
 
-plot "log.frag.ts" using 1:2 title "Heuristic Solution" w line ls 1
+plot "log.viterbi.serverfrag.ts" using 1:2 title "Heuristic Solution" w line ls 1, \
+     'log.cplex.serverfrag.ts' using 1:2 title "CPLEX Solution" w line ls 2
