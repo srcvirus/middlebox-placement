@@ -1,4 +1,4 @@
-set terminal pdfcairo font "Helvetica,9" linewidth 4 rounded fontscale 1.0
+set terminal pdfcairo font "Helvetica,9" linewidth 4 dashed rounded fontscale 1.0
 set style line 80 lt rgb "#808080"
 set style line 81 lt 0
 set style line 81 lt rgb "#808080"
@@ -14,11 +14,13 @@ set style line 2 lt rgb "#00A000" lw 1 pt 6
 set style line 3 lt rgb "#5060D0" lw 1 pt 2
 set style line 4 lt rgb "#F25900" lw 1 pt 9
 
-set output "egress_k_cdf.pdf"
-set xlabel "Hop Distance of Middlebox from Egress Switch"
+set output "service_cdf.pdf"
+set xlabel "Number of Service Points"
 set ylabel "CDF"
-set key outside horizontal 
+set key outside horizontal
 
-set yr[0:1.05]
+set xr[1:]
+set yr[0.75:1.0]
 
-plot "log.viterbi.egress_k.cdf" using 1:2 title "Heuristic Solution" w line ls 2
+plot "log.viterbi.service_points" using 1:2 title "Heuristic Solution" w line ls 2, \
+     "log.cplex.service_points" using 1:2 title "CPLEX Solution" w line ls 3

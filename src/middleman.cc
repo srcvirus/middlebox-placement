@@ -27,6 +27,8 @@ std::vector<std::vector<middlebox_instance> > deployed_mboxes;
 std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs,
     total_costs, stretches;
 std::vector<std::vector<int>> ingress_k, egress_k;
+std::list<int> mbox_count;
+std::vector<int> num_service_points;
 std::vector<double> net_util;
 double per_core_cost, per_bit_transit_cost;
 double cost[MAXN][MAXN];

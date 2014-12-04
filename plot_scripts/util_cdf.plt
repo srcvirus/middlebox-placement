@@ -17,9 +17,10 @@ set style line 4 lt rgb "#F25900" lw 1 pt 9
 set output "util_cdf.pdf"
 set xlabel "Utilization"
 set ylabel "CDF"
-set key top right
+set key outside horizontal
 
-set xr[0:1]
-set yr[0:1.25]
+#set xr[.7:1]
+set yr[0:1.0]
 
-plot "log.log.util.cdf" using 1:2 title "Heuristic Solution" w line ls 2
+plot "log.viterbi.sutil.cdf" using 1:2 title "Heuristic Solution" w line ls 2, \
+     "log.cplex.sutil.cdf" using 1:2 title "CPLEX Solution" w line ls 3

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <set>
 #include <stack>
 #include <stdarg.h>
 #include <stdio.h>
@@ -387,6 +388,10 @@ void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
     if (current_time != traffic_requests[i].arrival_time) {
       RefreshServerStats(current_time);
       current_time = traffic_requests[i].arrival_time;
+      int n_deployed = 0;
+      for (int j = 0; j < deployed_mboxes.size(); ++j)
+        n_deployed += deployed_mboxes.size();
+      mbox_count.push_back(n_deployed);
       ReleaseAllResources();
     }
     auto &current_solution = solutions[i];
@@ -446,6 +451,7 @@ void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
     UpdateResources(&current_solution, traffic_requests[i]);
     RefreshServerStats(current_time);
   }
+  
 }
 
 double GetSolutionStretch(const std::vector<int> &result) {
@@ -517,7 +523,7 @@ void ComputeKHops(
      ihops += ComputeShortestPath(solutions[i][j - 1], solutions[i][j])->size() - 1;
      ingress_k[i].push_back(ihops);
    }
-   for (int j = solutions[i].size() - 1; j >= 1; --j) {
+   for (int j = solutions[i].size() - 2; j >= 1; --j) {
      ehops += ComputeShortestPath(solutions[i][j + 1], solutions[i][j])->size() - 1;
      egress_k[i].push_back(ehops);
    }
@@ -544,6 +550,52 @@ void CplexComputeKHops(
       egress_k[i].push_back(ehops);
     }
   }
+}
+
+void ComputeServicePoints(const std::vector<std::vector<int>>& solutions) {
+  for (auto& current_solution : solutions) {
+    std::set<int> S;
+    for (int i = 1; i < current_solution.size() - 1; ++i) {
+      S.insert(current_solution[i]);
+    }
+    num_service_points.push_back(S.size());
+  }
+}
+
+void ProcessServicePointLogs(const std::string& output_file_prefix) {
+  const std::string kServicePointLogFile = output_file_prefix +
+                                              ".service_points";
+  FILE* service_point_log = fopen(kServicePointLogFile.c_str(), "w");
+  std::vector <std::pair<int, double>> cdf = GetCDF(num_service_points);
+  for (auto& cdf_element : cdf) {
+    fprintf(service_point_log, "%d %lf\n", cdf_element.first,
+                                           cdf_element.second);
+  }
+  fclose(service_point_log);
+}
+
+void ProcessMboxRatio(const std::string& output_file_prefix) {
+  int traffic_count = 0;
+  int current_time = traffic_requests[0].arrival_time;
+  const std::string kMboxRatioFileName = output_file_prefix + ".mbox.ratio";
+  FILE* mbox_ratio_file = fopen(kMboxRatioFileName.c_str(), "w");
+  const int kMboxSeqSize = traffic_requests[0].middlebox_sequence.size();
+  for (int i = 0; i < traffic_requests.size(); ++i) {
+    if (current_time != traffic_requests[i].arrival_time) {
+      int nmbox = mbox_count.front();
+      mbox_count.pop_front();
+      fprintf(mbox_ratio_file, "%d %d %d\n", current_time, nmbox,
+               traffic_requests[i].middlebox_sequence.size() * traffic_count);
+      traffic_count = 0;
+      current_time = traffic_requests[i].arrival_time;
+    }
+    ++traffic_count;
+  }
+  if (!mbox_count.empty()) {
+    fprintf(mbox_ratio_file, "%d %d %d\n", current_time, mbox_count.front(),
+             kMboxSeqSize * traffic_count);
+  }
+  fclose(mbox_ratio_file);
 }
 
 void ProcessKHopsLogs(const std::string& output_file_prefix) {
