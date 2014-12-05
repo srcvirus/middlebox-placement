@@ -990,6 +990,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     const IloNum relativeGap = 0.01; // find Integer solution within 1% of optimal
     cplex.setParam(IloCplex::TiLim, timeLimit);
     //cplex.setParam(IloCplex::EpGap, relativeGap);
+    cplex.setParam(IloCplex::Threads, 2);
     if (!cplex.solve()) {
       timer.stop();
       cout << "Could not solve ILP!" << endl;
@@ -1027,7 +1028,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         for (int m = 0; m < kMboxCount; ++m) {
           if (fabs(cplex.getValue(xtnm[t][n][m]) - 1) < EPS) {
             sequence[t].push_back(pseudo2actual[switch4mbox[m]]);
-            DEBUG("Traffic %d node %d provisioned on middlebox %d", t, n ,m);
+            DEBUG("Traffic %d node %d provisioned on middlebox %d\n", t, n ,m);
           }
         }
       }

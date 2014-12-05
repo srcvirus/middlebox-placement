@@ -121,12 +121,12 @@ int main(int argc, char *argv[]) {
       for (int i = 0; i < current_traffic_requests.size(); ++i) {
         // sequence
         std::vector<int> seq = sequence[i];
-        
+        /*        
         for (int s : seq) {
           cout << s << " ";
         }
         cout << endl;
-        
+        */
         for (int j = 0; j < seq.size(); ++j) {
           fprintf(sequence_log_file, "%d", seq[j]);
           if (j < seq.size() - 1) {
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
         // path
         std::vector<std::pair <int, int> > edge_list = edges[i];
         std::vector<std::pair <int, int> > all_edge_list = all_edges[i];
-        
+        /*
         for (std::pair<int, int> edge: edge_list) {
           cout << "(" << edge.first << ", " << edge.second << ") ";
         }
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
           cout << "(" << edge.first << ", " << edge.second << ") ";
         }
         cout << endl;
-        
+        */
         std::vector<int> path = CplexComputePath(edge_list, seq);
         for (int j = 0; j < path.size(); ++j) {
           fprintf(path_log_file, "%d", path[j]);
