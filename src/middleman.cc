@@ -2,7 +2,11 @@
 #include "util.h"
 #include "io.h"
 #include "viterbi.h"
+#ifdef CPLEX_HW
+#include "cplex4-hw.h"
+#else
 #include "cplex4.h"
+#endif
 
 #include <chrono>
 #include <map>
