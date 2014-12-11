@@ -249,7 +249,6 @@ int main(int argc, char *argv[]) {
 
       UpdateResources(result.get(), traffic_requests[i]);
       RefreshServerStats(current_time);
-
       // Progress bar
       if (i % 500 == 0) {
         double percentage_completed = 100.0 * static_cast<double>(i) /

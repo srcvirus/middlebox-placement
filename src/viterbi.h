@@ -39,8 +39,6 @@ std::unique_ptr<std::vector<int> > ViterbiCompute(
       DEBUG("[First stage] cost[stage][node] = %lf\n", cost[stage][node]);
     }
   }
-  // TODO(shihab): Handle repeated middleboxes.
-  // TODO(shihab): Handle middlebox reuse.
   for (stage = 1; stage < kNumStages; ++stage) {
     const middlebox &m_box = middleboxes[t_request.middlebox_sequence[stage]];
     previous_vector = current_vector;

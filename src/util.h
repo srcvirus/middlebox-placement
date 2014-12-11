@@ -209,16 +209,16 @@ int UsedMiddleboxIndex(int current_node, const middlebox &m_box,
   return NIL;
 }
 
-void UpdateMiddleboxInstances(int current_node, const middlebox &m_box,
+void UpdateMiddleboxInstances(int current_node, const middlebox* m_box,
                               const traffic_request &t_request) {
-  int used_middlebox_index = UsedMiddleboxIndex(current_node, m_box, t_request);
+  int used_middlebox_index = UsedMiddleboxIndex(current_node, *m_box, t_request);
   if (used_middlebox_index != NIL) {
     deployed_mboxes[current_node][used_middlebox_index].residual_capacity -=
         t_request.min_bandwidth;
   } else {
     deployed_mboxes[current_node].emplace_back(
-        &m_box, m_box.processing_capacity - t_request.min_bandwidth);
-    ReduceNodeCapacity(current_node, m_box);
+        m_box, m_box->processing_capacity - t_request.min_bandwidth);
+    ReduceNodeCapacity(current_node, *m_box);
   }
 }
 
@@ -231,7 +231,8 @@ void UpdateResources(const std::vector<int> *traffic_sequence,
   }
   for (int i = 1; i < static_cast<int>(traffic_sequence->size()) - 1; ++i) {
     const middlebox &m_box = middleboxes[t_request.middlebox_sequence[i - 1]];
-    UpdateMiddleboxInstances(traffic_sequence->at(i), m_box, t_request);
+    UpdateMiddleboxInstances(traffic_sequence->at(i),
+    &middleboxes[t_request.middlebox_sequence[i - 1]], t_request);
   }
 }
 
