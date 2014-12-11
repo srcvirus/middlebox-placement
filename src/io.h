@@ -175,6 +175,16 @@ void InitializeTopology(const char *filename) {
       }
     }
   }
+  closeness.resize(node_count);
+  for (int i = 0; i < node_count; ++i) {
+    double farness = 0.0;
+    for (int j = 0; j < node_count; ++j) {
+      if (i != j) {
+        farness += shortest_edge_path[i][j];
+      }
+    }
+    closeness[i] = 1.0 / farness;
+  }
 }
 
 #endif  // MIDDLEBOX_PLACEMENT_SRC_IO_H_

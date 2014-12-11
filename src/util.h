@@ -530,6 +530,18 @@ void ComputeKHops(
  }
 }
 
+void ComputeCloseness(
+  const std::vector<std::vector<int>>& solutions) {
+  sol_closeness.resize(solutions.size());
+  int i = 0;
+  for (auto& current_solution : solutions) {
+    for (auto& element : current_solution) {
+      sol_closeness[i].push_back(closeness[element]);
+    }
+    ++i;
+  }
+}
+
 void CplexComputeKHops(
   const std::vector<std::vector<int>>& solutions,
   const std::vector<std::vector<int>>& solution_paths) {
@@ -544,8 +556,8 @@ void CplexComputeKHops(
       for ( ; kk < solution_paths[i].size() - 1; ++kk) {
         if (solution_paths[i][kk] == solutions[i][j]) break;
       }
-      ihops += kk;
-      ehops += solution_paths[i].size() - kk - 1;
+      ihops = kk;
+      ehops = solution_paths[i].size() - kk - 1;
       ingress_k[i].push_back(ihops);
       egress_k[i].push_back(ehops);
     }
@@ -584,7 +596,7 @@ void ProcessMboxRatio(const std::string& output_file_prefix) {
     if (current_time != traffic_requests[i].arrival_time) {
       int nmbox = mbox_count.front();
       mbox_count.pop_front();
-      fprintf(mbox_ratio_file, "%d %d %d\n", current_time, nmbox,
+      fprintf(mbox_ratio_file, "%d %d %lu\n", current_time, nmbox,
                traffic_requests[i].middlebox_sequence.size() * traffic_count);
       traffic_count = 0;
       current_time = traffic_requests[i].arrival_time;
@@ -785,6 +797,22 @@ void ProcessServerUtilizationLogs(const std::string& output_file_prefix) {
     fprintf(server_util_cdf_file, "%lf %lf\n", cdf_data.first, cdf_data.second);
   }
   fclose(server_util_cdf_file);
+}
+
+void ProcessClosenessLogs(const std::string& output_file_prefix) {
+  const std::string kClosenessLogFile = output_file_prefix + ".closeness.cdf";
+  FILE* closeness_log = fopen(kClosenessLogFile.c_str(), "w");
+  std::vector<double> data;
+  for (int i = 0; i < sol_closeness.size(); ++i) {
+    for (int j = 0; j < sol_closeness[i].size(); ++j) {
+      data.push_back(sol_closeness[i][j]);
+    }
+  }
+  std::vector<std::pair<double,double>> cdf = GetCDF(data);
+  for (int i = 0; i < cdf.size(); ++i) {
+    fprintf(closeness_log, "%lf %lf\n", cdf[i].first, cdf[i].second);
+  }
+  fclose(closeness_log);
 }
 
 std::vector<int> CplexComputePath(const std::vector<std::pair<int,int>>& edges,
