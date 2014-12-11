@@ -96,7 +96,9 @@ struct traffic_request {
     for (auto value : middlebox_sequence) {
       seq_string += std::to_string(value) + " ";
     }
-    return "source : " + std::to_string(source) + ", destination : " +
+    return "arrival_time = " + std::to_string(arrival_time) +
+           ", duration = " + std::to_string(duration) +
+           ", source : " + std::to_string(source) + ", destination : " +
            std::to_string(destination) + ", min_bandwidth : " +
            std::to_string(min_bandwidth) + ", max_delay : " +
            std::to_string(max_delay) + ", delay_penalty : " +
@@ -203,6 +205,7 @@ extern double cost[MAXN][MAXN];
 extern int pre[MAXN][MAXN];
 extern int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 extern int shortest_edge_path[MAXN][MAXN];
+extern int max_time;
 extern middlebox fake_mbox;
 extern std::vector<std::vector<int> > results;
 extern std::vector<std::vector<int> > paths;

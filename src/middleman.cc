@@ -41,6 +41,7 @@ double cost[MAXN][MAXN];
 int pre[MAXN][MAXN];
 int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 int shortest_edge_path[MAXN][MAXN];
+int max_time;
 std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
 solution_statistics stats;
 std::vector<std::unique_ptr<std::vector<int> > > all_results;
@@ -71,6 +72,8 @@ int main(int argc, char *argv[]) {
       InitializeTrafficRequests(argument.second.c_str());
     } else if (argument.first == "--algorithm") {
       algorithm = argument.second;
+    } else if (argument.first == "--max_time") {
+      max_time = atoi(argument.second.c_str());
     }
   }
   if (algorithm == "cplex") {

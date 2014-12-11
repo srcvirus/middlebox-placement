@@ -100,6 +100,14 @@ void PrintMiddleboxes() {
   }
 }
 
+void PrintTrafficRequests() {
+  printf("[Traffic Requests (count = %d)\n",
+         static_cast<int>(traffic_requests.size()));
+  for (int i = 0; i < traffic_requests.size(); ++i) {
+    printf("[i = %d] %s\n", i, traffic_requests[i].GetDebugString().c_str());
+  }
+}
+
 void InitializeTrafficRequests(const char *filename) {
   traffic_requests.clear();
   auto csv_vector = ReadCSVFile(filename);
@@ -113,13 +121,15 @@ void InitializeTrafficRequests(const char *filename) {
     traffic_requests.emplace_back(row[0], row[1], row[2], row[3], row[4],
                                   row[5], mbox_sequence);
   }
-}
-
-void PrintTrafficRequests() {
-  printf("[Traffic Requests (count = %d)\n",
-         static_cast<int>(traffic_requests.size()));
-  for (int i = 0; i < traffic_requests.size(); ++i) {
-    printf("[i = %d] %s\n", i, traffic_requests[i].GetDebugString().c_str());
+  int last_time_stamp = max_time;
+  int current_time = traffic_requests.back().arrival_time;
+  for (int i = traffic_requests.size() - 1; i >= 0; --i) {
+    if (current_time != traffic_requests[i].arrival_time) {
+      last_time_stamp = current_time;
+      current_time = traffic_requests[i].arrival_time;
+    }
+    traffic_requests[i].duration = (last_time_stamp -
+    traffic_requests[i].arrival_time) * 60;
   }
 }
 
