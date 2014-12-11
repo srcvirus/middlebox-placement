@@ -16,15 +16,17 @@
 #define EPS 1e-9
 
 #define NUM_CORES_PER_SERVER 16
-#define SERVER_IDLE_ENERGY 0.0   // Kilo Watt
-#define SERVER_PEAK_ENERGY 0.135 // Kilo Watt
+//#define SERVER_IDLE_ENERGY 0.0   // Kilo Watt
+//#define SERVER_PEAK_ENERGY 0.135 // Kilo Watt
+#define SERVER_IDLE_ENERGY 0.0805   // Kilo Watt
+#define SERVER_PEAK_ENERGY 2.735 // Kilo Watt
 #define POWER_CONSUMPTION_ONE_SERVER(cores)                                    \
   (SERVER_IDLE_ENERGY +                                                        \
    (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) *                                 \
        ((1.0 * (cores)) / (1.0 * (NUM_CORES_PER_SERVER))))
 #define PER_UNIT_ENERGY_PRICE 0.10
-#define HW_MBOX_IDLE_ENERGY 1100
-#define HW_MBOX_PEAK_ENERGy 1700
+#define HW_MBOX_IDLE_ENERGY 1.1
+#define HW_MBOX_PEAK_ENERGY 1.7
 #define HW_MBOX_TRAFFIC_CAPACITY 1000 // 1000Mbps
 #define HW_MBOX_POWER_CONSUMPTION(traffic)                                     \
   (HW_MBOX_IDLE_ENERGY +                                                       \
