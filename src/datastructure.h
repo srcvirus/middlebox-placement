@@ -15,7 +15,7 @@
 #define NIL -1
 #define EPS 1e-9
 
-#define NUM_CORES_PER_SERVER 64 
+#define NUM_CORES_PER_SERVER 16
 //#define SERVER_IDLE_ENERGY 0.0   // Kilo Watt
 //#define SERVER_PEAK_ENERGY 0.135 // Kilo Watt
 #define SERVER_IDLE_ENERGY 0.0805   // Kilo Watt
@@ -57,8 +57,8 @@ struct middlebox {
 
 struct middlebox_instance {
   const middlebox *m_box;
-  int residual_capacity;
-  middlebox_instance(const middlebox *m_box, int res_cap)
+  long residual_capacity;
+  middlebox_instance(const middlebox *m_box, long res_cap)
       : m_box(m_box), residual_capacity(res_cap) {}
 };
 
@@ -120,10 +120,10 @@ struct node {
 
 struct edge_endpoint {
   node *u;
-  int bandwidth;
+  long bandwidth;
   int delay;
-  int residual_bandwidth;
-  edge_endpoint(node *u_ptr, int bw, int del)
+  long residual_bandwidth;
+  edge_endpoint(node *u_ptr, long bw, int del)
       : u(u_ptr), bandwidth(bw), delay(del), residual_bandwidth(bw) {}
 };
 

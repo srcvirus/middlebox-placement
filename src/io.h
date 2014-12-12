@@ -157,8 +157,9 @@ void InitializeTopology(const char *filename) {
   }
 
   for (int j = 0; j < edge_count; ++j) {
-    int source, destination, bandwidth, delay;
-    fscanf(file_ptr, "%d %d %d %d", &source, &destination, &bandwidth, &delay);
+    int source, destination, delay;
+    unsigned long bandwidth;
+    fscanf(file_ptr, "%d %d %lu %d", &source, &destination, &bandwidth, &delay);
     DEBUG(" Adding edge, %d --> %s\n", source,
           nodes[destination].GetDebugString().c_str());
     DEBUG(" Adding edge, %d --> %s\n", destination,

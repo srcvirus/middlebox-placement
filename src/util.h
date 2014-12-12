@@ -32,11 +32,11 @@ void PrintDebugMessage(const char *location, const char *fmt_string, ...) {
   va_end(args);
 }
 
-inline unsigned long long CurrentTimeNanos() {
+inline unsigned long CurrentTimeNanos() {
   timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  return static_cast<unsigned long long>(ts.tv_sec) +
-         static_cast<unsigned long long>(ts.tv_nsec);
+  return static_cast<unsigned long>(ts.tv_sec) +
+         static_cast<unsigned long>(ts.tv_nsec);
 }
 
 template <class T>
@@ -114,14 +114,14 @@ inline void RefreshServerStats(int timestamp) {
   }
 }
 
-inline int GetEdgeResidualBandwidth(int source, int destination) {
+inline unsigned long GetEdgeResidualBandwidth(int source, int destination) {
   for (auto &endpoint : graph[source]) {
     if (endpoint.u->node_id == destination) return endpoint.residual_bandwidth;
   }
   return NIL;
 }
 
-inline int GetPathResidualBandwidth(int source, int destination) {
+inline unsigned long GetPathResidualBandwidth(int source, int destination) {
   std::vector<int> *path_ptr = nullptr;
   std::pair<int, int> cache_index(source, destination);
   if (path_cache[cache_index]) {
@@ -131,7 +131,7 @@ inline int GetPathResidualBandwidth(int source, int destination) {
     //    path_cache[cache_index] = std::move(path);
     path_ptr = path_cache[cache_index].get();
   }
-  int residual_bandwidth = INF;
+  unsigned long residual_bandwidth = 100000000000000L;
   for (int i = 0; i < static_cast<int>(path_ptr->size()) - 1; ++i) {
     DEBUG("edge[%d][%d] = %d\n", path_ptr->at(i), path_ptr->at(i + 1),
           GetEdgeResidualBandwidth(path_ptr->at(i), path_ptr->at(i + 1)));
@@ -143,7 +143,7 @@ inline int GetPathResidualBandwidth(int source, int destination) {
 }
 
 inline void ReduceEdgeResidualBandwidth(int source, int destination,
-                                        int bandwidth) {
+                                        unsigned long bandwidth) {
   for (auto &endpoint : graph[source]) {
     if (endpoint.u->node_id == destination)
       endpoint.residual_bandwidth -= bandwidth;
@@ -175,7 +175,7 @@ inline void ReleaseAllResources() {
 }
 
 inline void ReducePathResidualBandwidth(int source, int destination,
-                                        int bandwidth) {
+                                        unsigned long bandwidth) {
   std::pair<int, int> cache_index(source, destination);
   std::vector<int> *path_ptr = nullptr;
   if (path_cache[cache_index]) {
@@ -360,10 +360,10 @@ inline int GetLatency(int source, int destination) {
   return NIL;
 }
 
-int GetBandwidthUsage(const std::vector<int>& traffic_sequence,
+unsigned long GetBandwidthUsage(const std::vector<int>& traffic_sequence,
                       const traffic_request& t_request)
 {
-  int bandwidth_usage = 0;
+  unsigned long bandwidth_usage = 0;
   for (int i = 0; i < traffic_sequence.size() - 1; ++i) {
     bandwidth_usage += (t_request.min_bandwidth * 
                          ComputeShortestPath(traffic_sequence[i],
@@ -373,8 +373,8 @@ int GetBandwidthUsage(const std::vector<int>& traffic_sequence,
   return bandwidth_usage;
 }
 
-long GetTotalNetworkBandwidth() {
-  long total_bandwidth = 0;
+unsigned long GetTotalNetworkBandwidth() {
+  unsigned long total_bandwidth = 0;
   for (int i = 0; i < graph.size(); ++i) {
     for (auto& endpoint : graph[i]) {
       total_bandwidth += endpoint.bandwidth;
@@ -466,12 +466,26 @@ double GetSolutionStretch(const std::vector<int> &result) {
     embedded_path_length +=
         ComputeShortestPath(result[i], result[i + 1])->size() - 1;
   }
+  double s = static_cast<double>(embedded_path_length) /
+              static_cast<double>(shortest_path_length);
+  if (s > 4.0) {
+    printf("s = %lf", s);
+    printf(" e_p_len = %d", embedded_path_length);
+    printf(" s_p_len = %d", shortest_path_length);
+    for (int i = 0; i < kSequenceLength - 1; ++i) {
+      auto p = ComputeShortestPath(result[i], result[i + 1]);
+      printf(" [%d --> %d]: ", result[i], result[i + 1]);
+      for (int j = 0; j < p->size(); ++j) printf(" %d", p->at(j));
+    }
+    printf("\n");
+  }
   return static_cast<double>(embedded_path_length) /
          static_cast<double>(shortest_path_length);
 }
 
 void ComputeAllStretches(const std::vector<std::vector<int>> &solutions) {
   for (auto &current_solution : solutions) {
+    double s = GetSolutionStretch(current_solution);
     stretches.push_back(GetSolutionStretch(current_solution));
   }
 }
@@ -492,9 +506,9 @@ void CplexComputeAllStretches(
 
 void ComputeNetworkUtilization(
   const std::vector<std::vector<int>>& solutions) {
-  const long kNetworkCapacity = GetTotalNetworkBandwidth();
+  const unsigned long kNetworkCapacity = GetTotalNetworkBandwidth();
   for(int i = 0; i < traffic_requests.size(); ++i) {
-    long bandwidth_usage = GetBandwidthUsage(solutions[i], traffic_requests[i]);
+    unsigned long bandwidth_usage = GetBandwidthUsage(solutions[i], traffic_requests[i]);
     net_util.push_back(static_cast<double>(bandwidth_usage) /
                          static_cast<double>(kNetworkCapacity));
   }
@@ -503,9 +517,9 @@ void ComputeNetworkUtilization(
 void CplexComputeNetworkUtilization(
   const std::vector<std::vector<int>>& solution_paths) {
   int i = 0;
-  const long kNetworkCapacity = GetTotalNetworkBandwidth();
+  const unsigned long kNetworkCapacity = GetTotalNetworkBandwidth();
   for (auto& t_request : traffic_requests) {
-    long bandwidth_usage = (solution_paths[i++].size() - 1) *
+    unsigned long bandwidth_usage = (solution_paths[i++].size() - 1) *
                              t_request.min_bandwidth;
     net_util.push_back(static_cast<double>(bandwidth_usage) /
                          static_cast<double>(kNetworkCapacity));

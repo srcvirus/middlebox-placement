@@ -249,6 +249,7 @@ int main(int argc, char *argv[]) {
 
       UpdateResources(result.get(), traffic_requests[i]);
       RefreshServerStats(current_time);
+      // printf("i = %d, %s\n", i, traffic_requests[i].GetDebugString().c_str());
       // Progress bar
       if (i % 500 == 0) {
         double percentage_completed = 100.0 * static_cast<double>(i) /
@@ -261,7 +262,7 @@ int main(int argc, char *argv[]) {
     // Print the solution time.
     printf("Solution time: %llu.%llus\n", elapsed_time / ONE_GIG,
            elapsed_time % ONE_GIG);
-    printf("Acceptance Ratio: %.2lf%%\n",
+    printf("Acceptance Ratio: %.8lf%%\n",
            100.0 * static_cast<double>(stats.num_accepted) /
                static_cast<double>(stats.num_accepted + stats.num_rejected));
 
