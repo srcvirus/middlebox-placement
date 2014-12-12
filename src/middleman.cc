@@ -93,13 +93,13 @@ int main(int argc, char *argv[]) {
     // GetEdgeCount(graph));
 
     for (int i = 0; i < traffic_requests.size();) {
-      traffic_requests[i].duration = 6000; // 300;
+//      traffic_requests[i].duration = 6000; // 300;
 
       fprintf(cost_log_file, "%d ", current_time);
       fprintf(util_log_file, "%d ", current_time);
 
       for (; i < traffic_requests.size() && current_time == traffic_requests[i].arrival_time; ++i) {
-        traffic_requests[i].duration = 6000; // 300;
+//        traffic_requests[i].duration = 6000; // 300;
         current_traffic_requests.push_back(traffic_requests[i]);
       }
       current_time = traffic_requests[i].arrival_time;
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
     stats.num_accepted = stats.num_rejected = 0;
     const int kNumTrafficRequests = static_cast<int>(traffic_requests.size());
     for (int i = 0; i < kNumTrafficRequests; ++i) {
-      traffic_requests[i].duration = 6000; // 300;
+//      traffic_requests[i].duration = 6000; // 300;
       if (current_time != traffic_requests[i].arrival_time) {
         // RefreshServerStats(current_time);
         current_time = traffic_requests[i].arrival_time;

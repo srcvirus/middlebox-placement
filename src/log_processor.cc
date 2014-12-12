@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     }
   }
   for (int i = 0; i < traffic_requests.size(); ++i) {
-    traffic_requests[i].duration = 6000;
+//    traffic_requests[i].duration = 6000;
   }
   ComputeSolutionCosts(results);
   ComputeServicePoints(results);
