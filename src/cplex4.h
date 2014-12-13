@@ -113,9 +113,10 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     std::vector<int> _nbr[kSwitchCount];
     int switch4server[kServerCount];
     std::vector<int> server4switch[kSwitchCount];
-    int _beta[kSwitchCount][kSwitchCount];
+    long _beta[kSwitchCount][kSwitchCount];
     int _delta[kSwitchCount][kSwitchCount];
-    int max_beta = 0, max_delta = 0;
+    long max_beta = 0;
+    int max_delta = 0;
 
     //////////CPLEX Variable//////////
     //_z_s_n = 1, iff _n is attached to _s
@@ -192,8 +193,9 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
 
     // read link info from file
-    for (int _l = 0, _u, _v, b, d; _l < kLinkCount; ++_l) {
-      fscanf(topology_file, "%d %d %d %d", &_u, &_v, &b, &d);
+    long b;
+    for (int _l = 0, _u, _v, d; _l < kLinkCount; ++_l) {
+      fscanf(topology_file, "%d %d %ld %d", &_u, &_v, &b, &d);
       _beta[_u][_v] = b;
       _beta[_v][_u] = b;
       _delta[_u][_v] = d;
@@ -204,6 +206,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       // max_beta & max_delta
       max_beta = max(max_beta, b);
       max_delta = max(max_delta, d);
+
+      //cout << "Bandwidth " << _beta[_u][_v] << endl;
     }
 
     // print_IloInt2dArray(_u_s_l, kSwitchCount, kLinkCount, "_u_s_l");
