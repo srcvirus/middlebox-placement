@@ -23,4 +23,5 @@ set yr[0:1.05]
 
 plot "log.viterbi.egress_k.cdf" using 1:2 title "Heuristic-Internet2" w linespoints ls 2, \
      "log.cplex.egress_k.cdf" using 1:2 title "CPLEX-Internet2" w linespoints ls 3, \
-     "log.viterbi.dc.egress_k.cdf" using 1:2 title "Heuristic-DC" w linespoints ls 4
+     "log.viterbi.dc.egress_k.cdf" using 1:2 title "Heuristic-DC" w linespoints ls 4, \
+     "log.cplex.dc.egress_k.cdf" using 1:2 title "CPLEX-DC" w linespoints ls 1

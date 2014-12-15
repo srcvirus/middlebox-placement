@@ -14,14 +14,12 @@ set style line 2 lt rgb "#00A000" lw 1.5 pt 6
 set style line 3 lt rgb "#5060D0" lw 1.5 pt 2
 set style line 4 lt rgb "#F25900" lw 1.5 pt 9
 
-set output "ingress_k_cdf.pdf"
+set output "ingress_k_hw_cplex_cdf.pdf"
 set xlabel "Hop Distance of Middlebox from Ingress Switch"
 set ylabel "CDF"
 set key outside horizontal
 
 set yr[0:1.05]
 
-plot "log.viterbi.ingress_k.cdf" using 1:2 title "Heuristic-Internet2" w linespoints ls 2, \
-     "log.cplex.ingress_k.cdf" using 1:2 title "CPLEX-Internet2" w linespoints ls 3, \
-     "log.viterbi.dc.ingress_k.cdf" using 1:2 title "Heuristic-DC" w linespoints ls 4, \
-     "log.cplex.dc.ingress_k.cdf" using 1:2 title "CPLEX-DC" w linespoints ls 1
+plot "log.cplex.i2.ingress_k.cdf" using 1:2 title "VNF-Internet2" w linespoints ls 2, \
+     "log.cplex.hw.ingress_k.cdf" using 1:2 title "Hardware-Internet2" w linespoints ls 3

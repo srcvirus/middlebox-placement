@@ -24,4 +24,5 @@ set yr[0.30:1.0]
 
 plot "log.viterbi.service_points" using 1:2 title "Heuristic-Internet2" w linespoints ls 2, \
      "log.cplex.service_points" using 1:2 title "CPLEX-Internet2" w linespoints ls 3, \
-     "log.viterbi.dc.service_points" using 1:2 title "Heuristic-DC" w linespoints ls 4
+     "log.viterbi.dc.service_points" using 1:2 title "Heuristic-DC" w  linespoints ls 4, \
+     "log.cplex.dc.service_points" using 1:2 title "CPLEX-DC" w linespoints ls 1
