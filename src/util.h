@@ -325,7 +325,12 @@ inline double GetEnergyCost(int current_node, const middlebox &m_box,
                          duration_hours * PER_UNIT_ENERGY_PRICE;
   double current_cost = GetServerEnergyConsumption(currently_used_cores) *
                         duration_hours * PER_UNIT_ENERGY_PRICE;
-  return current_cost - previous_cost;
+  double energy_cost = current_cost - previous_cost;
+  if (previously_used_cores == 0) {
+    energy_cost += (GetServerEnergyConsumption(0) * duration_hours *
+                    PER_UNIT_ENERGY_PRICE);
+  }
+  return energy_cost;
 }
 
 inline double GetDeploymentCost(int current_node, const middlebox &m_box,
@@ -390,6 +395,7 @@ void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
       RefreshServerStats(current_time);
       double e_cost = 0.0;
       for (auto& n : nodes) {
+        if (n.num_cores <= 0) continue;
         int used_cores = n.num_cores - n.residual_cores;
         e_cost += POWER_CONSUMPTION_ONE_SERVER(used_cores) *
             (traffic_requests[i].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;

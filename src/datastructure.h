@@ -16,8 +16,8 @@
 #define EPS 1e-9
 
 #define NUM_CORES_PER_SERVER 16
-//#define SERVER_IDLE_ENERGY 0.0   // Kilo Watt
-//#define SERVER_PEAK_ENERGY 0.135 // Kilo Watt
+// #define SERVER_IDLE_ENERGY 0.0   // Kilo Watt
+// #define SERVER_PEAK_ENERGY 0.135 // Kilo Watt
 #define SERVER_IDLE_ENERGY 0.0805   // Kilo Watt
 #define SERVER_PEAK_ENERGY 2.735 // Kilo Watt
 #define POWER_CONSUMPTION_ONE_SERVER(cores)                                    \
