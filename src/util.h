@@ -388,6 +388,15 @@ void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
   for (int i = 0; i < solutions.size(); ++i) {
     if (current_time != traffic_requests[i].arrival_time) {
       RefreshServerStats(current_time);
+      double e_cost = 0.0;
+      for (auto& n : nodes) {
+        int used_cores = n.num_cores - n.residual_cores;
+        e_cost += POWER_CONSUMPTION_ONE_SERVER(used_cores) *
+            (traffic_requests[i].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;
+        printf("Used cores = %d, energy consumed = %lf\n", used_cores,
+                POWER_CONSUMPTION_ONE_SERVER(used_cores));
+      }
+      e_cost_ts.push_back(e_cost);
       current_time = traffic_requests[i].arrival_time;
       int n_deployed = 0;
       for (int j = 0; j < deployed_mboxes.size(); ++j)
@@ -694,17 +703,20 @@ void ProcessCostLogs(const std::string& output_file_prefix) {
   double current_e_cost = 0.0;
   double current_t_cost = 0.0;
   double current_sla_cost = 0.0;
+  int t = 0;
   for (int i = 0; i < traffic_requests.size(); ++i) {
     if (current_time != traffic_requests[i].arrival_time) {
+      current_cost += e_cost_ts[t];
       cost_ts_data.push_back(current_cost);
       fprintf(cost_ts_file, "%d %lf %lf %lf %lf %lf\n", 
-              current_time, current_cost, current_d_cost, current_e_cost,
+              current_time, current_cost, current_d_cost, e_cost_ts[t],
               current_t_cost, current_sla_cost);
       current_time = traffic_requests[i].arrival_time;
       current_cost = current_d_cost = current_e_cost = current_t_cost =
           current_sla_cost = 0.0;
+      ++t;
     }
-    current_cost += total_costs[i];
+    current_cost += (total_costs[i] - energy_costs[i]);
     current_d_cost += deployment_costs[i];
     current_e_cost += energy_costs[i];
     current_t_cost += transit_costs[i];

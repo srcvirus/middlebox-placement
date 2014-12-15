@@ -195,6 +195,7 @@ extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > >
     path_cache;
 extern std::vector<double> deployment_costs, energy_costs, transit_costs,
     sla_costs, total_costs, stretches;
+extern std::vector<double> e_cost_ts;
 extern std::vector<std::vector<int> > ingress_k;
 extern std::vector<std::vector<int> > egress_k;
 extern std::vector<std::vector<double> > sol_closeness;
