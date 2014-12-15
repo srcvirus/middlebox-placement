@@ -1,5 +1,5 @@
-#ifndef MIDDLEBOX_PLACEMENT_SRC_CPLEX_H
-#define MIDDLEBOX_PLACEMENT_SRC_CPLEX_H
+#ifndef MIDDLEBOX_PLACEMENT_SRC_CPLEX_HB_H
+#define MIDDLEBOX_PLACEMENT_SRC_CPLEX_HB_H
 
 #include "datastructure.h"
 #include "util.h"
@@ -46,6 +46,8 @@ void print_IloInt3dArray(IloInt3dArray a, int dimension1, int dimension2,
     DEBUG("\n");
   }
 }
+
+long beta_u_v[2000][2000];
 
 void run_cplex(std::vector<traffic_request> traffic_requests, 
               double &opex, std::vector<double> &opex_breakdown,
@@ -114,9 +116,9 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     std::vector<int> _nbr[kSwitchCount];
     int switch4server[kServerCount];
     std::vector<int> server4switch[kSwitchCount];
-    int _beta[kSwitchCount][kSwitchCount];
+    //long _beta[kSwitchCount][kSwitchCount];
     int _delta[kSwitchCount][kSwitchCount];
-    int max_beta = 0;
+    long max_beta = 0;
     int max_delta = 0;
 
     //////////CPLEX Variable//////////
@@ -189,16 +191,16 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // initialize _beta & _delta to remove any garbage value
     for (int _u = 0; _u < kSwitchCount; ++_u) {
       for (int _v = 0; _v < kSwitchCount; ++_v) {
-        _beta[_u][_v] = _delta[_u][_v] = 0;
+        beta_u_v[_u][_v] = _delta[_u][_v] = 0;
       }
     }
 
     // read link info from file
-    int b;
+    long b;
     for (int _l = 0, _u, _v, d; _l < kLinkCount; ++_l) {
-      fscanf(topology_file, "%d %d %d %d", &_u, &_v, &b, &d);
-      _beta[_u][_v] = b;
-      _beta[_v][_u] = b;
+      fscanf(topology_file, "%d %d %ld %d", &_u, &_v, &b, &d);
+      beta_u_v[_u][_v] = b;
+      beta_u_v[_v][_u] = b;
       _delta[_u][_v] = d;
       _delta[_v][_u] = d;
       //_nbr
@@ -260,7 +262,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // compute the number of total middleboxes
     double total_bw = 0.0;
     for (int t=0; t < traffic_requests.size(); ++t) {
-     total_bw += traffic_requests[t].min_bandwidth;
+      total_bw += traffic_requests[t].min_bandwidth;
     }
     int kMboxCount = 0;
     std::vector<int> server4mbox;
@@ -278,7 +280,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
             //# of deployable mbox = resource-cap/resource-req
             mcount = floor(c_nr[_n][0] * 1.0 / middleboxes[p - 2].cpu_requirement);
             mcount_bw = ceil(total_bw * 1.0 / middleboxes[p - 2].processing_capacity);
-            mcount = min(mcount, mcount_bw);             
+            mcount = min(mcount, mcount_bw);
             for (int i = 0; i < mcount; ++i) {
               server4mbox.push_back(_n);
               mboxType.push_back(p);
@@ -310,16 +312,17 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
 
     // declare CPLEX varibales beta_u_v and delta_u_v, ### do not move,
     // kSwitchCount must be @ new value
-    IloInt2dArray beta_u_v(env, kSwitchCount);
+    //IloInt2dArray beta_u_v(env, kSwitchCount);
     IloInt2dArray delta_u_v(env, kSwitchCount);
     for (int _u = 0; _u < kSwitchCount; ++_u) {
-      beta_u_v[_u] = IloIntArray(env, kSwitchCount);
+      //beta_u_v[_u] = IloIntArray(env, kSwitchCount);
       delta_u_v[_u] = IloIntArray(env, kSwitchCount);
       for (int _v = 0; _v < kSwitchCount; ++_v) {
-        beta_u_v[_u][_v] = 0;
+        //beta_u_v[_u][_v] = 0;
         delta_u_v[_u][_v] = 0;
       }
     }
+    /*
     // copy old data from _beta and _delta
     for (int _u = 0; _u < seed; ++_u) {
       for (int _v = 0; _v < seed; ++_v) {
@@ -327,6 +330,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         delta_u_v[_u][_v] = _delta[_u][_v];
       }
     }
+    */
 
     std::vector<int> mbox4switch[kSwitchCount];  // do not move, kSwitchCount
                                                  // must be @ new value
@@ -337,8 +341,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         //cout << "Server " << _n << " Switch " << _u << endl;
         int _v = seed++; // label for pseudo switch
 
-        beta_u_v[_u][_v] = INF;
-        beta_u_v[_v][_u] = INF;
+        beta_u_v[_u][_v] = std::numeric_limits<long>::max();
+        beta_u_v[_v][_u] = std::numeric_limits<long>::max();
         delta_u_v[_u][_v] = 0;
         delta_u_v[_v][_u] = 0;
 
@@ -1276,4 +1280,4 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
   env.end();
 }
 
-#endif  // MIDDLEBOX_PLACEMENT_SRC_CPLEX_H
+#endif  // MIDDLEBOX_PLACEMENT_SRC_CPLEX__HB_H
