@@ -114,6 +114,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     std::vector<int> _nbr[kSwitchCount];
     int switch4server[kServerCount];
     std::vector<int> server4switch[kSwitchCount];
+    int actual_server[kServerCount];
     int _beta[kSwitchCount][kSwitchCount];
     int _delta[kSwitchCount][kSwitchCount];
     int max_beta = 0;
@@ -163,6 +164,9 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
 
       c_nr[sw][0] = 0;
       c_nr[sw + kSwitchCount][0] = cpu;
+
+      actual_server[sw] = 0;
+      actual_server[sw + kSwitchCount] = (cpu > 0);
       // TODO: reflect changes if server and resource info changed
     }
     // print_IloInt2dArray(_z_s_n, kSwitchCount, kServerCount, "_z_s_n");
@@ -920,15 +924,17 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // add energy cost to the objective
     IloExpr energyCost(env);
     IloNum duration_hours = 1.0 * traffic_requests[0].duration / (60.0 * 60.0);
-    for (int _n = 0; _n < kServerCount; ++_n) {
-      IloExpr consumedResource(env);
-      for(int m : mbox4server[_n]){
-        if (mboxType[m] == 0 || mboxType[m] == 1) {
-          continue;
+    for (int _n = kInitialSwitchCount; _n < kServerCount; ++_n) {
+      if (actual_server[_n]) {
+        IloExpr consumedResource(env);
+        for(int m : mbox4server[_n]){
+          if (mboxType[m] == 0 || mboxType[m] == 1) {
+            continue;
+         }
+         consumedResource += ym[m] * cmr[m][0];
         }
-        consumedResource += ym[m] * cmr[m][0];
+        energyCost += POWER_CONSUMPTION_ONE_SERVER(consumedResource) * duration_hours * PER_UNIT_ENERGY_PRICE;
       }
-      energyCost += POWER_CONSUMPTION_ONE_SERVER(consumedResource) * duration_hours * PER_UNIT_ENERGY_PRICE;
     }
     objective += beta * energyCost;
     // add traffic forwarding cost
@@ -1116,17 +1122,21 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     opex_breakdown.push_back(depCost);
 
     double per_server_energy = 0.0;
-    for (int _n = 0; _n < kServerCount; ++_n) {
-      int used_cpu = 0;
-      for(int m : mbox4server[_n]){
-        if (mboxType[m] == 0 || mboxType[m] == 1) {
-          continue;
+    for (int _n = kInitialSwitchCount; _n < kServerCount; ++_n) {
+      if (actual_server[_n]) {
+        int used_cpu = 0;
+        for(int m : mbox4server[_n]){
+          if (mboxType[m] == 0 || mboxType[m] == 1) {
+            continue;
+         }
+         used_cpu += ym_vals2[m] * cmr[m][0];
         }
-        used_cpu += ym_vals2[m] * cmr[m][0];
+        per_server_energy = POWER_CONSUMPTION_ONE_SERVER(used_cpu) * duration_hours * PER_UNIT_ENERGY_PRICE;
+        cout << "server " << _n << " cpu " << used_cpu << " energy " << per_server_energy << endl;
+        enrCost += per_server_energy;
       }
-      per_server_energy = POWER_CONSUMPTION_ONE_SERVER(used_cpu) * duration_hours * PER_UNIT_ENERGY_PRICE;
-      enrCost += per_server_energy;
     }
+    cout << "total er cost " << enrCost << endl;
     opex_breakdown.push_back(enrCost);
 
     IloNum fwdCost = 0.0;
