@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < num_switches; ++i) {
       for (int j = 0; j < num_switches; ++j) {
         if ( i == j ) continue;
-        if (tm[i][j] < 10000) continue;
+        if (tm[i][j] < 800000) continue;
         int u = i, v = j;
         int min_bandwidth = (static_cast<double>(tm[i][j]) / 1000.0) + 0.5;
         int max_latency = 100 + rand() % 100;
