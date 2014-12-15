@@ -394,14 +394,17 @@ void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
     if (current_time != traffic_requests[i].arrival_time) {
       RefreshServerStats(current_time);
       double e_cost = 0.0;
+      int active_servers = 0;
       for (auto& n : nodes) {
         if (n.num_cores <= 0) continue;
         int used_cores = n.num_cores - n.residual_cores;
+        if (used_cores > 0) ++active_servers;
         e_cost += POWER_CONSUMPTION_ONE_SERVER(used_cores) *
-            (traffic_requests[i].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;
-        printf("Used cores = %d, energy consumed = %lf\n", used_cores,
-                POWER_CONSUMPTION_ONE_SERVER(used_cores));
+            (traffic_requests[i - 1].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;
+        printf("ts = %d, Used cores = %d, energy consumed = %lf, duratio = %d\n", current_time, used_cores,
+                POWER_CONSUMPTION_ONE_SERVER(used_cores), traffic_requests[i - 1].duration);
       }
+      num_active_servers.push_back(std::pair<int,int>(current_time,active_servers));
       e_cost_ts.push_back(e_cost);
       current_time = traffic_requests[i].arrival_time;
       int n_deployed = 0;
@@ -459,6 +462,7 @@ void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
                  traffic_requests[i].delay_penalty;
     }
 
+
     deployment_costs.push_back(d_cost);
     energy_costs.push_back(e_cost);
     transit_costs.push_back(t_cost);
@@ -468,6 +472,20 @@ void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
     RefreshServerStats(current_time);
   }
   
+  double er_cost = 0.0;
+  int K = traffic_requests.size() - 1;
+  int active_servers = 0;
+  for (auto& n : nodes) {
+    if (n.num_cores <= 0) continue;
+    int used_cores = n.num_cores - n.residual_cores;
+    if (used_cores > 0) ++active_servers;
+    er_cost += POWER_CONSUMPTION_ONE_SERVER(used_cores) *
+        (traffic_requests[K].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;
+    printf("ts = %d, Used cores = %d, energy consumed = %lf, duration = %d\n", current_time, used_cores,
+            POWER_CONSUMPTION_ONE_SERVER(used_cores), traffic_requests[K].duration);
+  }
+  num_active_servers.push_back(std::pair<int,int>(current_time,active_servers));
+  e_cost_ts.push_back(er_cost);
 }
 
 double GetSolutionStretch(const std::vector<int> &result) {
@@ -484,15 +502,15 @@ double GetSolutionStretch(const std::vector<int> &result) {
   double s = static_cast<double>(embedded_path_length) /
               static_cast<double>(shortest_path_length);
   if (s > 4.0) {
-    printf("s = %lf", s);
-    printf(" e_p_len = %d", embedded_path_length);
-    printf(" s_p_len = %d", shortest_path_length);
+    // printf("s = %lf", s);
+    // printf(" e_p_len = %d", embedded_path_length);
+    // printf(" s_p_len = %d", shortest_path_length);
     for (int i = 0; i < kSequenceLength - 1; ++i) {
       auto p = ComputeShortestPath(result[i], result[i + 1]);
-      printf(" [%d --> %d]: ", result[i], result[i + 1]);
-      for (int j = 0; j < p->size(); ++j) printf(" %d", p->at(j));
+      // printf(" [%d --> %d]: ", result[i], result[i + 1]);
+      // for (int j = 0; j < p->size(); ++j) printf(" %d", p->at(j));
     }
-    printf("\n");
+    // printf("\n");
   }
   return static_cast<double>(embedded_path_length) /
          static_cast<double>(shortest_path_length);
@@ -601,6 +619,14 @@ void ComputeServicePoints(const std::vector<std::vector<int>>& solutions) {
       S.insert(current_solution[i]);
     }
     num_service_points.push_back(S.size());
+  }
+}
+
+void ProcessActiveServerLogs(const std::string& output_file_prefix) {
+  const std::string kActiveServerLogFile = output_file_prefix + ".active_server.ts";
+  FILE* active_server_log = fopen(kActiveServerLogFile.c_str(), "w");
+  for (auto& ts_data : num_active_servers) {
+    fprintf(active_server_log, "%d %d\n", ts_data.first, ts_data.second);
   }
 }
 
@@ -734,9 +760,9 @@ void ProcessCostLogs(const std::string& output_file_prefix) {
     fprintf(all_cost_file, " %lf %lf %lf %lf\n", energy_costs[i], transit_costs[i],
             sla_costs[i], total_costs[i]);
   }
-  cost_ts_data.push_back(current_cost);
+  cost_ts_data.push_back(current_cost + e_cost_ts[t]);
   fprintf(cost_ts_file, "%d %lf %lf %lf %lf %lf\n", 
-          current_time, current_cost, current_d_cost, current_e_cost,
+          current_time, current_cost + e_cost_ts[t], current_d_cost, e_cost_ts[t],
           current_t_cost, current_sla_cost);
   fclose(cost_ts_file);
   fclose(all_cost_file);
@@ -810,6 +836,11 @@ void ProcessServerUtilizationLogs(const std::string& output_file_prefix) {
   FILE *per_server_util_file = fopen(kPerServerUtilFileName.c_str(), "w");
   std::vector<double> mean_util_data;
   for (int i = 0; i < per_server_util.size(); ++i) {
+    printf("Server-%d\n", i);
+    for (int j = 0; j < per_server_util[i].size(); ++j) {
+      // printf(" %lf", per_server_util[i][j]);
+    }
+    printf("\n");
     if (per_server_util[i].size() > 0) {
       double mean_util = GetMean(per_server_util[i]);
       double fifth_percentile_util = GetNthPercentile(per_server_util[i], 5);

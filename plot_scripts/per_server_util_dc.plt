@@ -12,7 +12,7 @@ set border 31 back linestyle 80
 set xtics rotate by 45 right 
 set ytics nomirror
 
-set style fill pattern border 21
+# set style fill pattern border 21
 set output "per_server_util_dc.pdf"
 set xlabel "Server ID"
 set ylabel "Mean Utilization"
@@ -21,4 +21,4 @@ set key outside horizontal
 set yr[0:1.05]
 
 plot 'log.viterbi.dc.per_server_util' using 2:3:4:xtic(1) title "Heuristic Solution"  fs pattern 2, \
-      'log.cplex.dc.per_server_util' using 2:3:4:xtic(1) title "CPLEX Solution"  fs pattern 3
+      'log.cplex.dc.per_server_util' using 2:3:4:xtic(1) title "CPLEX Solution"  fs pattern 5
