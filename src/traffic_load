@@ -12,6 +12,6 @@ time_instance_count=${#time_instances[@]}
 
 for (( i=0; i<$time_instance_count; i++ ))
 do
- load=$((`cat $traffic_request | grep ^"${time_instances[$i]}" | cut -d',' -f4 | awk 'BEGIN {s=0;} {s+=$1;} END {print s;}'`))
+ load=$((`cat $traffic_request | grep ^"${time_instances[$i]}," | cut -d',' -f4 | awk 'BEGIN {s=0;} {s+=$1;} END {print s;}'`))
  echo "${time_instances[$i]} $load"
 done
