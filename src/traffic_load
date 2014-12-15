@@ -1,0 +1,17 @@
+#!/bin/bash
+if (( $# != 1 ));
+then
+  echo "./traffic_load <traffic_request_file_name>"
+  exit 1
+fi
+
+traffic_request=$1
+
+time_instances=($(cat "$traffic_request" | cut -d',' -f1 | sort -n | uniq))
+time_instance_count=${#time_instances[@]}
+
+for (( i=0; i<$time_instance_count; i++ ))
+do
+ load=$((`cat $traffic_request | grep ^"${time_instances[$i]}," | cut -d',' -f4 | awk 'BEGIN {s=0;} {s+=$1;} END {print s;}'`))
+ echo "${time_instances[$i]} $load"
+done

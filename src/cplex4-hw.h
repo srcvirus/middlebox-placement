@@ -267,8 +267,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
             mboxType.push_back(p);
           } else {
             //# of deployable mbox = resource-cap/resource-req
-            mcount =
-                floor(c_nr[_n][0] * 1.0 / middleboxes[p - 2].cpu_requirement);
+            //mcount = floor(c_nr[_n][0] * 1.0 / middleboxes[p - 2].cpu_requirement);
+            mcount = 1;
             for (int i = 0; i < mcount; ++i) {
               server4mbox.push_back(_n);
               mboxType.push_back(p);
@@ -884,7 +884,37 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
     //---------------------------------------------------------------------
     */
+    
+    //-----CPLEX Constraint------------------------------------------------
+    //one middlebox of each type
+    model.add(ym[28] == 1);
+    model.add(ym[40] == 1);
+    model.add(ym[64] == 1);
 
+    IloExpr type2(env);
+    IloExpr type3(env);
+    IloExpr type4(env);
+    IloExpr type5(env);
+    for (int m = 0; m < kMboxCount; ++m) {
+      if (mboxType[m] < 2) {
+        continue;
+      } else if (mboxType[m] == 2) {
+        type2 += ym[m];
+      } else if (mboxType[m] == 3) {
+        type3 += ym[m];
+      } else if (mboxType[m] == 4) {
+        type4 += ym[m];
+      } else if (mboxType[m] == 5) {
+        type5 += ym[m];
+      }
+    }
+
+    model.add(type2 == 1);
+    model.add(type3 == 1);
+    //model.add(type4 == 1);
+    model.add(type5 == 1);
+    //---------------------------------------------------------------------
+    
     DEBUG("Done.\n");
 
     ///////////////////////////////////////////////////
@@ -898,14 +928,12 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
 
     // build the objective
     IloExpr objective(env);
-    /*
     // add deployment cost
     IloExpr deploymentCost(env);
     for (int m = 0; m < kMboxCount; ++m) {
       deploymentCost += D_m[m] * ym[m];
     }
     objective += alpha * deploymentCost;
-    */
     // add energy cost to the objective
     IloNum duration_hours = 1.0 * traffic_requests[0].duration / (60.0 * 60.0);
     IloExpr energyCost(env);
@@ -1231,7 +1259,26 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
       }
     }
 
-
+    /*
+    int t2 = 0, t3 = 0, t4 = 0, t5 = 0;
+    for (int m = 0; m < kMboxCount; ++m) {
+      if (ym_vals2[m] > 0) {
+        cout << "ym " << ym_vals2[m] << " fr " << m << endl;
+      }
+      if (mboxType[m] < 2) {
+        continue;
+      } else if (mboxType[m] == 2) {
+        t2 += ym_vals2[m];
+      } else if (mboxType[m] == 3) {
+        t3 += ym_vals2[m];
+      } else if (mboxType[m] == 4) {
+        t4 += ym_vals2[m];
+      } else if (mboxType[m] == 5) {
+        t5 += ym_vals2[m];
+      }
+    }
+    cout << "Type Couts " << t2 << " " << t3 << " " << t4 << endl;
+    */
     /*
     for (int t = 0; t < kTrafficCount; ++t) {
       for (int n = 0; n < trafficNodeCount[t]; ++n) {

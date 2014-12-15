@@ -1,2 +1,3 @@
-""         "Heuristic Solution"   "Heuristic Solution" "Heuristic Solution"
-"Internet2"  177.232      109.155     272.923
+""         "Heuristic Solution"   "Heuristic Solution" "Heuristic Solution" "CPLEX" "CPLEX" "CPLEX"
+"Internet2"  1.8386      1.52584     2.20819   1.7    1.4082    2.1231
+"Data Center" 0.525445 0.357985 1.203906

@@ -27,7 +27,8 @@
 #define PER_UNIT_ENERGY_PRICE 0.10
 #define HW_MBOX_IDLE_ENERGY 1.1
 #define HW_MBOX_PEAK_ENERGY 1.7
-#define HW_MBOX_TRAFFIC_CAPACITY 1000 // 1000Mbps
+//#define HW_MBOX_TRAFFIC_CAPACITY 1000 // 1000Mbps
+#define HW_MBOX_TRAFFIC_CAPACITY 50000 // 50Gbps
 #define HW_MBOX_POWER_CONSUMPTION(traffic)                                     \
   (HW_MBOX_IDLE_ENERGY +                                                       \
    (HW_MBOX_PEAK_ENERGY - HW_MBOX_IDLE_ENERGY) *                               \
