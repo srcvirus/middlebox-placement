@@ -62,6 +62,7 @@ vector<double> ProcessWindow(const vector<vector<double>> v) {
 
 int main(int argc, char *argv[]) {
   const int kMaxTrafficFileIndex = atoi(argv[1]);
+  const double kScaleFactor = atof(argv[2]);
   int current_time = 0;
   FILE *ofp = fopen("traffic-request", "w");
   for (int i = 1, current_time = 0; i <= kMaxTrafficFileIndex; ++i) {
@@ -107,18 +108,23 @@ int main(int argc, char *argv[]) {
         int traffic = current_traffic[k];
         if (traffic < 300)
           continue;
+        traffic = static_cast<int>(static_cast<double>(traffic) * kScaleFactor);
+        if (traffic > 600000) traffic = 600000;
         vector<int> mbox_seq = RandomSeqWithUniqueElements(3);
-        if (traffic)
+        if (traffic) {
           // printf("%d,%d,%d,%d,%d,%0.3lf,%s,%s,%s\n", start_time, u, v,
           //      traffic, max_latency, penalty,
           //       middlebox_names[mbox_seq[0]].c_str(),
           //       middlebox_names[mbox_seq[1]].c_str(),
           //       middlebox_names[mbox_seq[2]].c_str());
-        fprintf(ofp, "%d,%d,%d,%d,%d,%.8lf,%s,%s,%s\n", start_time, u, v,
-                traffic, max_latency, penalty,
-                middlebox_names[mbox_seq[0]].c_str(),
-                middlebox_names[mbox_seq[1]].c_str(),
-                middlebox_names[mbox_seq[2]].c_str());
+          if (start_time == 7665) {
+          fprintf(ofp, "0,%d,%d,%d,%d,%.8lf,%s,%s,%s\n", u, v,
+                  traffic, max_latency, penalty,
+                  middlebox_names[mbox_seq[0]].c_str(),
+                  middlebox_names[mbox_seq[1]].c_str(),
+                  middlebox_names[mbox_seq[2]].c_str());
+          }
+        }
       }
       printf("Traffic duration = %d seconds\n", 300 * (n_points - 1));
     }
