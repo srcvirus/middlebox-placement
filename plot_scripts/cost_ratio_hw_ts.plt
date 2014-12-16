@@ -5,7 +5,7 @@ set output "cost_ratio_hw_ts.pdf"
 # set   autoscale                        # scale axes automatically
 set xtics nomirror
 set ytic nomirror
-set tmargin 0
+set tmargin 0 
 set lmargin 6 
 set multiplot layout 3,1
 set origin 0,0

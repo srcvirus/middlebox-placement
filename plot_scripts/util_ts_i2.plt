@@ -20,7 +20,7 @@ set ylabel "Mean Utilization"
 set key outside horizontal
 
 set xr[0:10000]
-set yr[0.6:1]
+set yr[0.94:1]
 
-plot "log.viterbi.serverutil.ts" using 1:2 title "Heuristic Solution" w line ls 1, \
-     "log.cplex.serverutil.ts" using 1:2 title "CPLEX Solution" w line ls 2
+plot "log.viterbi.i2.serverutil.ts" using 1:2 title "Heuristic Solution" w line ls 1, \
+     "log.cplex.i2.serverutil.ts" using 1:2 title "CPLEX Solution" w line ls 2

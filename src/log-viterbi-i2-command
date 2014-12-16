@@ -1,1 +1,1 @@
-./log_processor --per_bit_transit_cost=3.626543209876543e-7 --topology_file=topology --middlebox_spec_file=middlebox-spec --traffic_request_file=traffic-request.i2 --max_time=10080 --sequence_file=log.sequences --log_file_prefix=log.viterbi.i2
+./log_processor --per_bit_transit_cost=3.626543209876543e-7 --topology_file=topology --middlebox_spec_file=middlebox-spec --traffic_request_file=traffic-request.i2 --max_time=10070 --sequence_file=log.sequences --log_file_prefix=log.viterbi.i2
