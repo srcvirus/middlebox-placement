@@ -4,7 +4,7 @@ set style line 81 lt 0
 set style line 81 lt rgb "#070707"
 
 set grid back linestyle 81
-set border 31 back linestyle 80
+set border 3 back linestyle 80
 
 set xtics 1 nomirror
 set ytics 0.25 nomirror
