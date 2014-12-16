@@ -5,7 +5,7 @@
 #include "util.h"
 #include <string>
 #include <cmath>
-#include <limits>
+#include <climits>
 #include <utility>
 
 #include <ilcplex/ilocplex.h>
@@ -341,8 +341,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         //cout << "Server " << _n << " Switch " << _u << endl;
         int _v = seed++; // label for pseudo switch
 
-        beta_u_v[_u][_v] = INF;
-        beta_u_v[_v][_u] = INF;
+        beta_u_v[_u][_v] = INT_MAX;
+        beta_u_v[_v][_u] = INT_MAX;
         delta_u_v[_u][_v] = 0;
         delta_u_v[_v][_u] = 0;
 
@@ -731,7 +731,6 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     //cout << "w done" << endl;
 
-
     //-----CPLEX Constraint------------------------------------------------
     // ADD: physical link capacity constraint
     //cout << "kSwitchCount " << kSwitchCount << endl;
@@ -745,8 +744,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
               for (int n2 : nbr[t][n1]) {
                 if (n1 < n2) {
                   sum += (wtuv_u_v[t][n1][n2][_u][_v] +
-                          wtuv_u_v[t][n1][n2][_v][_u]) *
-                         beta_t;
+                          wtuv_u_v[t][n1][n2][_v][_u]) * beta_t;
                 }
               }
             }
@@ -803,6 +801,10 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     // ADD: middlebox processing capacity constraint
     // double beta_min = 0.0;
     for (int m = 0; m < kMboxCount; ++m) {
+
+      if (mboxType[m] < 2)
+        continue;
+
       IloExpr sum(env);
       for (int t = 0, beta_min; t < kTrafficCount; ++t) {
         beta_min = traffic_requests[t].min_bandwidth;
@@ -811,7 +813,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         }
       }
       //model.add(IloIfThen(env, (ym[m] == 1), (sum <= K_m[m])));
-      model.add(sum <= K_m[m]);
+      model.add(sum <= K_m[m]+ 1000);
+      //cout << " K_m " << K_m[m] << " for m = " << m << endl;
     }
     //---------------------------------------------------------------------
     //cout << "cnst middlebox processing" << endl;
@@ -1005,8 +1008,8 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     cplex.setOut(env.getNullStream());
     #endif
     // set time limit
-    const IloInt timeLimit = 60 * 60;  // one hour
-    const IloNum relativeGap = 0.01; // find Integer solution within 1% of optimal
+    const IloInt timeLimit = 60 * 60 * 2;  // two hours
+    const IloNum relativeGap = 0.001; // find Integer solution within 0.1% of optimal
     cplex.setParam(IloCplex::TiLim, timeLimit);
     //cplex.setParam(IloCplex::EpGap, relativeGap);
     //cplex.setParam(IloCplex::Threads, 2);
