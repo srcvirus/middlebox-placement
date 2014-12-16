@@ -155,11 +155,16 @@ void InitializeTopology(const char *filename) {
       sp_pre[i][j] = sp_pre[j][i] = NIL;
     }
   }
+  DEBUG("nodes.size() = %u\n", nodes.size());
+  for (auto& n : nodes) {
+    DEBUG("%s\n", n.GetDebugString().c_str());
+  }
 
   for (int j = 0; j < edge_count; ++j) {
     int source, destination, delay;
     unsigned long bandwidth;
     fscanf(file_ptr, "%d %d %lu %d", &source, &destination, &bandwidth, &delay);
+    DEBUG(" Read edge: %d %d %lu %d\n", source, destination, bandwidth, delay);
     DEBUG(" Adding edge, %d --> %s\n", source,
           nodes[destination].GetDebugString().c_str());
     DEBUG(" Adding edge, %d --> %s\n", destination,
