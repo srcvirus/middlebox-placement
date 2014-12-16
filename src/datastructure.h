@@ -198,6 +198,7 @@ extern std::vector<double> deployment_costs, energy_costs, transit_costs,
 extern std::vector<double> e_cost_ts;
 extern std::vector<std::vector<int> > ingress_k;
 extern std::vector<std::vector<int> > egress_k;
+extern std::vector<std::pair<int,int>> num_active_servers;
 extern std::vector<std::vector<double> > sol_closeness;
 extern std::vector<int> num_service_points;
 extern std::vector<double> net_util;

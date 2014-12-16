@@ -36,6 +36,7 @@ std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs,
     total_costs, stretches;
 std::vector<double> e_cost_ts;
 std::vector<std::vector<int>> ingress_k, egress_k;
+std::vector<std::pair<int,int>> num_active_servers;
 std::vector<std::vector<double>> sol_closeness; 
 std::list<int> mbox_count;
 std::vector<int> num_service_points;
@@ -236,7 +237,7 @@ int main(int argc, char *argv[]) {
     stats.num_accepted = stats.num_rejected = 0;
     const int kNumTrafficRequests = static_cast<int>(traffic_requests.size());
     for (int i = 0; i < kNumTrafficRequests; ++i) {
-      traffic_requests[i].duration = 6300; // 300;
+      // traffic_requests[i].duration = 6300; // 300;
       if (current_time != traffic_requests[i].arrival_time) {
         // RefreshServerStats(current_time);
         current_time = traffic_requests[i].arrival_time;

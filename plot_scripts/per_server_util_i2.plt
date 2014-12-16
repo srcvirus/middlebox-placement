@@ -20,5 +20,5 @@ set key outside horizontal
 
 set yr[0:1.05]
 
-plot 'log.viterbi.per_server_util' using 2:3:4:xtic(1) title "Heuristic Solution"  fs pattern 2, \
-     'log.cplex.per_server_util' using 2:3:4:xtic(1) title "CPLEX Solution" fs  pattern 9
+plot 'log.viterbi.i2.per_server_util' using 2:3:4:xtic(1) title "Heuristic Solution"  fs pattern 2, \
+     'log.cplex.i2.per_server_util' using 2:3:4:xtic(1) title "CPLEX Solution" fs  pattern 9

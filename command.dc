@@ -1,1 +1,1 @@
-./middleman --per_core_cost=0.01 --per_bit_transit_cost=3.626543209876543e-7 --topology_file=univ1.topo --middlebox_spec_file=middlebox-spec --traffic_request_file=traffic-request.dc --max_time=50 --algorithm=viterbi
+./middleman --per_core_cost=0.01 --per_bit_transit_cost=3.626543209876543e-7 --topology_file=univ1.topo --middlebox_spec_file=middlebox-spec --traffic_request_file=traffic-request.dc --max_time=45 --algorithm=viterbi

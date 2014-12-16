@@ -15,6 +15,7 @@ std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs,
 total_costs, stretches;
 std::vector<double> e_cost_ts;
 std::vector<std::vector<int>> ingress_k, egress_k;
+std::vector<std::pair<int,int>> num_active_servers;
 std::vector<std::vector<double>> sol_closeness; 
 std::list<int> mbox_count;
 std::vector<int> num_service_points;
@@ -81,6 +82,7 @@ int main(int argc, char *argv[]) {
   ProcessMboxRatio(log_file_prefix);
   ProcessServicePointLogs(log_file_prefix);
   ProcessClosenessLogs(log_file_prefix);
+  ProcessActiveServerLogs(log_file_prefix);
   return 0;
 }
 
