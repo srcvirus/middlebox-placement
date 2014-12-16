@@ -1132,11 +1132,11 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
          used_cpu += ym_vals2[m] * cmr[m][0];
         }
         per_server_energy = POWER_CONSUMPTION_ONE_SERVER(used_cpu) * duration_hours * PER_UNIT_ENERGY_PRICE;
-        cout << "server " << _n << " cpu " << used_cpu << " energy " << per_server_energy << endl;
+        //cout << "server " << _n << " cpu " << used_cpu << " energy " << per_server_energy << endl;
         enrCost += per_server_energy;
       }
     }
-    cout << "total er cost " << enrCost << endl;
+    //cout << "total er cost " << enrCost << endl;
     opex_breakdown.push_back(enrCost);
 
     IloNum fwdCost = 0.0;
