@@ -208,6 +208,7 @@ extern double cost[MAXN][MAXN];
 extern int pre[MAXN][MAXN];
 extern int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 extern int shortest_edge_path[MAXN][MAXN];
+extern long bw[MAXN][MAXN];
 extern int max_time;
 extern middlebox fake_mbox;
 extern std::vector<std::vector<int> > results;
