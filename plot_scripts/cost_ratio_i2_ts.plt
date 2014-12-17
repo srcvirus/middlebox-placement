@@ -24,7 +24,7 @@ set xlabel "Time (x10^3 min)"
 set ytics 0.1 rotate by 90 offset 0,0.5
 set yr[0.95:1.19]
 set size 1.0, 0.39
-plot    	"log.total_cost_ratio" using ($1/1000):2 title "Total Cost Ratio" w line lc rgb '#FA160E' lt 5
+plot    	"log.total_cost_ratio" using ($1/1000):2 title "Total Cost" w line lc rgb '#FA160E' lt 5
 
 set ytics 1 rotate by 90 offset 0,0.5
 set origin 0.00, 0.35
@@ -40,7 +40,7 @@ unset xtics
 set yr[0.4:1.20]
 set ytics 0.5 rotate by 90 offset 0,0.5
 
-plot    	"log.energy_cost_ratio" using ($1/1000):2 title "Energy Cost Ratio" w line lt 3
+plot    	"log.energy_cost_ratio" using ($1/1000):2 title "Energy Cost" w line lt 3
 
 
 set origin 0.0, 0.61
@@ -56,7 +56,7 @@ set yr[0.95:1.45]
 # set ytics 50
 
 set ytics 0.2 rotate by 90 offset 0,0.5
-plot    	"log.transit_cost_ratio" using ($1/1000):2 title "Transit Cost Ratio" w line lc rgb '#9FBB55' lt 1
+plot    	"log.transit_cost_ratio" using ($1/1000):2 title "Transit Cost" w line lc rgb '#9FBB55' lt 1
 
 # set origin 0.0, 0.655
 # set size 1.0,0.24

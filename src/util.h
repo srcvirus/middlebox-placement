@@ -39,16 +39,15 @@ inline unsigned long CurrentTimeNanos() {
          static_cast<unsigned long>(ts.tv_nsec);
 }
 
-template <class T>
-double GetMean(const std::vector<T> &data) {
+template <class T> double GetMean(const std::vector<T> &data) {
   T sum = T(0);
   const size_t kNumElements = data.size();
-  for (auto &element : data) sum += element;
+  for (auto &element : data)
+    sum += element;
   return sum / static_cast<T>(kNumElements);
 }
 
-template <class T>
-T GetNthPercentile(const std::vector<T> &data, int n) {
+template <class T> T GetNthPercentile(const std::vector<T> &data, int n) {
   std::vector<T> temp_data_buffer = data;
   sort(temp_data_buffer.begin(), temp_data_buffer.end());
   const size_t kNumElements = data.size();
@@ -62,39 +61,40 @@ T GetNthPercentile(const std::vector<T> &data, int n) {
 }
 
 template <class T>
-std::vector<std::pair<T,double>> GetCDF(
-    const std::vector<T> &data) {
+std::vector<std::pair<T, double> > GetCDF(const std::vector<T> &data) {
   int precision = 1;
   std::vector<T> temp_data_buffer = data;
-  if (typeid(temp_data_buffer[0]) == typeid(double)
-      || typeid(temp_data_buffer[0]) == typeid(float)) {
+  if (typeid(temp_data_buffer[0]) == typeid(double)||
+      typeid(temp_data_buffer[0]) == typeid(float)) {
     precision = 1000;
   }
   std::map<int, int> cdf;
   for (int i = 0; i < temp_data_buffer.size(); ++i) {
     int bucket_index = temp_data_buffer[i] * precision;
-    if (cdf[bucket_index]) cdf[bucket_index]++;
-    else cdf[bucket_index] = 1;
+    if (cdf[bucket_index])
+      cdf[bucket_index]++;
+    else
+      cdf[bucket_index] = 1;
   }
-  std::map<int,int>::iterator prev = cdf.begin(), current = cdf.begin();
+  std::map<int, int>::iterator prev = cdf.begin(), current = cdf.begin();
   current++;
-  for( ; current != cdf.end(); current++, prev++) {
+  for (; current != cdf.end(); current++, prev++) {
     current->second += prev->second;
   }
   int total = temp_data_buffer.size();
-  std::vector<std::pair<T, double>> ret;
-  for ( current = cdf.begin() ; current != cdf.end(); ++current) {
+  std::vector<std::pair<T, double> > ret;
+  for (current = cdf.begin(); current != cdf.end(); ++current) {
     T first = static_cast<T>(current->first) / static_cast<T>(precision);
-    double second = static_cast<double>(current->second) /
-                      static_cast<double>(total);
+    double second =
+        static_cast<double>(current->second) / static_cast<double>(total);
     ret.push_back(std::make_pair(first, second));
   }
   return ret;
 }
 
-inline std::unique_ptr<std::vector<int>> ComputeShortestPath(int source,
-                                                             int destination) {
-  std::unique_ptr<std::vector<int>> path(new std::vector<int>());
+inline std::unique_ptr<std::vector<int> > ComputeShortestPath(int source,
+                                                              int destination) {
+  std::unique_ptr<std::vector<int> > path(new std::vector<int>());
   while (destination != NIL) {
     path->push_back(destination);
     destination = sp_pre[source][destination];
@@ -116,7 +116,8 @@ inline void RefreshServerStats(int timestamp) {
 
 inline unsigned long GetEdgeResidualBandwidth(int source, int destination) {
   for (auto &endpoint : graph[source]) {
-    if (endpoint.u->node_id == destination) return endpoint.residual_bandwidth;
+    if (endpoint.u->node_id == destination)
+      return endpoint.residual_bandwidth;
   }
   return NIL;
 }
@@ -151,7 +152,8 @@ inline void ReduceEdgeResidualBandwidth(int source, int destination,
 }
 
 void DecommissionAllMiddleboxes() {
-  for (auto &mboxes : deployed_mboxes) mboxes.clear();
+  for (auto &mboxes : deployed_mboxes)
+    mboxes.clear();
 }
 
 void ReleaseBandwidth() {
@@ -209,9 +211,10 @@ int UsedMiddleboxIndex(int current_node, const middlebox &m_box,
   return NIL;
 }
 
-void UpdateMiddleboxInstances(int current_node, const middlebox* m_box,
+void UpdateMiddleboxInstances(int current_node, const middlebox *m_box,
                               const traffic_request &t_request) {
-  int used_middlebox_index = UsedMiddleboxIndex(current_node, *m_box, t_request);
+  int used_middlebox_index =
+      UsedMiddleboxIndex(current_node, *m_box, t_request);
   if (used_middlebox_index != NIL) {
     deployed_mboxes[current_node][used_middlebox_index].residual_capacity -=
         t_request.min_bandwidth;
@@ -232,7 +235,8 @@ void UpdateResources(const std::vector<int> *traffic_sequence,
   for (int i = 1; i < static_cast<int>(traffic_sequence->size()) - 1; ++i) {
     const middlebox &m_box = middleboxes[t_request.middlebox_sequence[i - 1]];
     UpdateMiddleboxInstances(traffic_sequence->at(i),
-    &middleboxes[t_request.middlebox_sequence[i - 1]], t_request);
+                             &middleboxes[t_request.middlebox_sequence[i - 1]],
+                             t_request);
   }
 }
 
@@ -254,7 +258,8 @@ inline int IsResourceAvailable(int prev_node, int current_node,
       return 1;
     }
     // If we cannot use existing ones, then we need to instantiate new one.
-    if (resource_vector.cpu_cores[current_node] >= m_box.cpu_requirement) {
+    if (m_box.processing_capacity >= t_request.min_bandwidth &&
+        resource_vector.cpu_cores[current_node] >= m_box.cpu_requirement) {
       return 1;
     }
   }
@@ -360,20 +365,21 @@ double GetCost(int prev_node, int current_node, const resource &resource_vector,
 
 inline int GetLatency(int source, int destination) {
   for (edge_endpoint endpoint : graph[source]) {
-    if (endpoint.u->node_id == destination) return endpoint.delay;
+    if (endpoint.u->node_id == destination)
+      return endpoint.delay;
   }
   return NIL;
 }
 
-unsigned long GetBandwidthUsage(const std::vector<int>& traffic_sequence,
-                      const traffic_request& t_request)
-{
+unsigned long GetBandwidthUsage(const std::vector<int> &traffic_sequence,
+                                const traffic_request &t_request) {
   unsigned long bandwidth_usage = 0;
   for (int i = 0; i < traffic_sequence.size() - 1; ++i) {
-    bandwidth_usage += (t_request.min_bandwidth * 
-                         ComputeShortestPath(traffic_sequence[i],
-                                             traffic_sequence[i + 1])->size() 
-                                               - 1);
+    bandwidth_usage +=
+        (t_request.min_bandwidth *
+             ComputeShortestPath(traffic_sequence[i], traffic_sequence[i + 1])
+                 ->size() -
+         1);
   }
   return bandwidth_usage;
 }
@@ -381,30 +387,36 @@ unsigned long GetBandwidthUsage(const std::vector<int>& traffic_sequence,
 unsigned long GetTotalNetworkBandwidth() {
   unsigned long total_bandwidth = 0;
   for (int i = 0; i < graph.size(); ++i) {
-    for (auto& endpoint : graph[i]) {
+    for (auto &endpoint : graph[i]) {
       total_bandwidth += endpoint.bandwidth;
     }
   }
   return total_bandwidth;
 }
 
-void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
+void ComputeSolutionCosts(const std::vector<std::vector<int> > &solutions) {
   int current_time = traffic_requests[0].arrival_time;
   for (int i = 0; i < solutions.size(); ++i) {
     if (current_time != traffic_requests[i].arrival_time) {
       RefreshServerStats(current_time);
       double e_cost = 0.0;
       int active_servers = 0;
-      for (auto& n : nodes) {
-        if (n.num_cores <= 0) continue;
+      for (auto &n : nodes) {
+        if (n.num_cores <= 0)
+          continue;
         int used_cores = n.num_cores - n.residual_cores;
-        if (used_cores > 0) ++active_servers;
-        e_cost += POWER_CONSUMPTION_ONE_SERVER(used_cores) *
+        if (used_cores > 0)
+          ++active_servers;
+        e_cost +=
+            POWER_CONSUMPTION_ONE_SERVER(used_cores) *
             (traffic_requests[i - 1].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;
-        printf("ts = %d, Used cores = %d, energy consumed = %lf, duratio = %d\n", current_time, used_cores,
-                POWER_CONSUMPTION_ONE_SERVER(used_cores), traffic_requests[i - 1].duration);
+        printf(
+            "ts = %d, Used cores = %d, energy consumed = %lf, duratio = %d\n",
+            current_time, used_cores, POWER_CONSUMPTION_ONE_SERVER(used_cores),
+            traffic_requests[i - 1].duration);
       }
-      num_active_servers.push_back(std::pair<int,int>(current_time,active_servers));
+      num_active_servers.push_back(
+          std::pair<int, int>(current_time, active_servers));
       e_cost_ts.push_back(e_cost);
       current_time = traffic_requests[i].arrival_time;
       int n_deployed = 0;
@@ -462,7 +474,6 @@ void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
                  traffic_requests[i].delay_penalty;
     }
 
-
     deployment_costs.push_back(d_cost);
     energy_costs.push_back(e_cost);
     transit_costs.push_back(t_cost);
@@ -471,20 +482,24 @@ void ComputeSolutionCosts(const std::vector<std::vector<int>> &solutions) {
     UpdateResources(&current_solution, traffic_requests[i]);
     RefreshServerStats(current_time);
   }
-  
+
   double er_cost = 0.0;
   int K = traffic_requests.size() - 1;
   int active_servers = 0;
-  for (auto& n : nodes) {
-    if (n.num_cores <= 0) continue;
+  for (auto &n : nodes) {
+    if (n.num_cores <= 0)
+      continue;
     int used_cores = n.num_cores - n.residual_cores;
-    if (used_cores > 0) ++active_servers;
+    if (used_cores > 0)
+      ++active_servers;
     er_cost += POWER_CONSUMPTION_ONE_SERVER(used_cores) *
-        (traffic_requests[K].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;
-    printf("ts = %d, Used cores = %d, energy consumed = %lf, duration = %d\n", current_time, used_cores,
-            POWER_CONSUMPTION_ONE_SERVER(used_cores), traffic_requests[K].duration);
+               (traffic_requests[K].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;
+    printf("ts = %d, Used cores = %d, energy consumed = %lf, duration = %d\n",
+           current_time, used_cores, POWER_CONSUMPTION_ONE_SERVER(used_cores),
+           traffic_requests[K].duration);
   }
-  num_active_servers.push_back(std::pair<int,int>(current_time,active_servers));
+  num_active_servers.push_back(
+      std::pair<int, int>(current_time, active_servers));
   e_cost_ts.push_back(er_cost);
 }
 
@@ -500,7 +515,7 @@ double GetSolutionStretch(const std::vector<int> &result) {
         ComputeShortestPath(result[i], result[i + 1])->size() - 1;
   }
   double s = static_cast<double>(embedded_path_length) /
-              static_cast<double>(shortest_path_length);
+             static_cast<double>(shortest_path_length);
   if (s > 4.0) {
     // printf("s = %lf", s);
     // printf(" e_p_len = %d", embedded_path_length);
@@ -516,83 +531,83 @@ double GetSolutionStretch(const std::vector<int> &result) {
          static_cast<double>(shortest_path_length);
 }
 
-void ComputeAllStretches(const std::vector<std::vector<int>> &solutions) {
+void ComputeAllStretches(const std::vector<std::vector<int> > &solutions) {
   for (auto &current_solution : solutions) {
     double s = GetSolutionStretch(current_solution);
     stretches.push_back(GetSolutionStretch(current_solution));
   }
 }
 
-void CplexComputeAllStretches(
-  const std::vector<std::vector<int>>& solution_paths) {
-  for (auto& path : solution_paths) {
+void
+CplexComputeAllStretches(const std::vector<std::vector<int> > &solution_paths) {
+  for (auto &path : solution_paths) {
     int embedded_path_length = path.size() - 1;
     int source = path[0];
     int destination = path[embedded_path_length];
-    int shortest_path_length = ComputeShortestPath(
-                                 source, destination)->size() - 1;
-    double stretch = static_cast<double>(embedded_path_length) / 
-                      static_cast<double>(shortest_path_length);
-    stretches.push_back(stretch);                      
+    int shortest_path_length =
+        ComputeShortestPath(source, destination)->size() - 1;
+    double stretch = static_cast<double>(embedded_path_length) /
+                     static_cast<double>(shortest_path_length);
+    stretches.push_back(stretch);
   }
 }
 
-void ComputeNetworkUtilization(
-  const std::vector<std::vector<int>>& solutions) {
+void
+ComputeNetworkUtilization(const std::vector<std::vector<int> > &solutions) {
   const unsigned long kNetworkCapacity = GetTotalNetworkBandwidth();
-  for(int i = 0; i < traffic_requests.size(); ++i) {
-    unsigned long bandwidth_usage = GetBandwidthUsage(solutions[i], traffic_requests[i]);
+  for (int i = 0; i < traffic_requests.size(); ++i) {
+    unsigned long bandwidth_usage =
+        GetBandwidthUsage(solutions[i], traffic_requests[i]);
     net_util.push_back(static_cast<double>(bandwidth_usage) /
-                         static_cast<double>(kNetworkCapacity));
+                       static_cast<double>(kNetworkCapacity));
   }
 }
 
 void CplexComputeNetworkUtilization(
-  const std::vector<std::vector<int>>& solution_paths) {
+    const std::vector<std::vector<int> > &solution_paths) {
   int i = 0;
   const unsigned long kNetworkCapacity = GetTotalNetworkBandwidth();
-  for (auto& t_request : traffic_requests) {
-    unsigned long bandwidth_usage = (solution_paths[i++].size() - 1) *
-                             t_request.min_bandwidth;
+  for (auto &t_request : traffic_requests) {
+    unsigned long bandwidth_usage =
+        (solution_paths[i++].size() - 1) * t_request.min_bandwidth;
     net_util.push_back(static_cast<double>(bandwidth_usage) /
-                         static_cast<double>(kNetworkCapacity));
+                       static_cast<double>(kNetworkCapacity));
   }
 }
 
-void ComputeKHops(
-  const std::vector<std::vector<int>>& solutions) {
- ingress_k.resize(solutions.size());
- egress_k.resize(solutions.size());
- for (int i = 0; i < solutions.size(); ++i) {
-   int ingress = solutions[i].front();
-   int egress = solutions[i].back();
-   int ihops = 0, ehops = 0;
-   for (int j = 1; j < solutions[i].size() - 1; ++j) {
-     ihops += ComputeShortestPath(solutions[i][j - 1], solutions[i][j])->size() - 1;
-     ingress_k[i].push_back(ihops);
-   }
-   for (int j = solutions[i].size() - 2; j >= 1; --j) {
-     ehops += ComputeShortestPath(solutions[i][j + 1], solutions[i][j])->size() - 1;
-     egress_k[i].push_back(ehops);
-   }
- }
+void ComputeKHops(const std::vector<std::vector<int> > &solutions) {
+  ingress_k.resize(solutions.size());
+  egress_k.resize(solutions.size());
+  for (int i = 0; i < solutions.size(); ++i) {
+    int ingress = solutions[i].front();
+    int egress = solutions[i].back();
+    int ihops = 0, ehops = 0;
+    for (int j = 1; j < solutions[i].size() - 1; ++j) {
+      ihops +=
+          ComputeShortestPath(solutions[i][j - 1], solutions[i][j])->size() - 1;
+      ingress_k[i].push_back(ihops);
+    }
+    for (int j = solutions[i].size() - 2; j >= 1; --j) {
+      ehops +=
+          ComputeShortestPath(solutions[i][j + 1], solutions[i][j])->size() - 1;
+      egress_k[i].push_back(ehops);
+    }
+  }
 }
 
-void ComputeCloseness(
-  const std::vector<std::vector<int>>& solutions) {
+void ComputeCloseness(const std::vector<std::vector<int> > &solutions) {
   sol_closeness.resize(solutions.size());
   int i = 0;
-  for (auto& current_solution : solutions) {
-    for (auto& element : current_solution) {
+  for (auto &current_solution : solutions) {
+    for (auto &element : current_solution) {
       sol_closeness[i].push_back(closeness[element]);
     }
     ++i;
   }
 }
 
-void CplexComputeKHops(
-  const std::vector<std::vector<int>>& solutions,
-  const std::vector<std::vector<int>>& solution_paths) {
+void CplexComputeKHops(const std::vector<std::vector<int> > &solutions,
+                       const std::vector<std::vector<int> > &solution_paths) {
   ingress_k.resize(solutions.size());
   egress_k.resize(solutions.size());
   for (int i = 0; i < solutions.size(); ++i) {
@@ -601,8 +616,9 @@ void CplexComputeKHops(
     int ihops = 0, ehops = 0;
     int kk = 0;
     for (int j = 1; j < solutions[i].size() - 1; ++j) {
-      for ( ; kk < solution_paths[i].size() - 1; ++kk) {
-        if (solution_paths[i][kk] == solutions[i][j]) break;
+      for (; kk < solution_paths[i].size() - 1; ++kk) {
+        if (solution_paths[i][kk] == solutions[i][j])
+          break;
       }
       ihops = kk;
       ehops = solution_paths[i].size() - kk - 1;
@@ -612,8 +628,8 @@ void CplexComputeKHops(
   }
 }
 
-void ComputeServicePoints(const std::vector<std::vector<int>>& solutions) {
-  for (auto& current_solution : solutions) {
+void ComputeServicePoints(const std::vector<std::vector<int> > &solutions) {
+  for (auto &current_solution : solutions) {
     std::set<int> S;
     for (int i = 1; i < current_solution.size() - 1; ++i) {
       S.insert(current_solution[i]);
@@ -622,38 +638,39 @@ void ComputeServicePoints(const std::vector<std::vector<int>>& solutions) {
   }
 }
 
-void ProcessActiveServerLogs(const std::string& output_file_prefix) {
-  const std::string kActiveServerLogFile = output_file_prefix + ".active_server.ts";
-  FILE* active_server_log = fopen(kActiveServerLogFile.c_str(), "w");
-  for (auto& ts_data : num_active_servers) {
+void ProcessActiveServerLogs(const std::string &output_file_prefix) {
+  const std::string kActiveServerLogFile =
+      output_file_prefix + ".active_server.ts";
+  FILE *active_server_log = fopen(kActiveServerLogFile.c_str(), "w");
+  for (auto &ts_data : num_active_servers) {
     fprintf(active_server_log, "%d %d\n", ts_data.first, ts_data.second);
   }
 }
 
-void ProcessServicePointLogs(const std::string& output_file_prefix) {
-  const std::string kServicePointLogFile = output_file_prefix +
-                                              ".service_points";
-  FILE* service_point_log = fopen(kServicePointLogFile.c_str(), "w");
-  std::vector <std::pair<int, double>> cdf = GetCDF(num_service_points);
-  for (auto& cdf_element : cdf) {
+void ProcessServicePointLogs(const std::string &output_file_prefix) {
+  const std::string kServicePointLogFile =
+      output_file_prefix + ".service_points";
+  FILE *service_point_log = fopen(kServicePointLogFile.c_str(), "w");
+  std::vector<std::pair<int, double> > cdf = GetCDF(num_service_points);
+  for (auto &cdf_element : cdf) {
     fprintf(service_point_log, "%d %lf\n", cdf_element.first,
-                                           cdf_element.second);
+            cdf_element.second);
   }
   fclose(service_point_log);
 }
 
-void ProcessMboxRatio(const std::string& output_file_prefix) {
+void ProcessMboxRatio(const std::string &output_file_prefix) {
   int traffic_count = 0;
   int current_time = traffic_requests[0].arrival_time;
   const std::string kMboxRatioFileName = output_file_prefix + ".mbox.ratio";
-  FILE* mbox_ratio_file = fopen(kMboxRatioFileName.c_str(), "w");
+  FILE *mbox_ratio_file = fopen(kMboxRatioFileName.c_str(), "w");
   const int kMboxSeqSize = traffic_requests[0].middlebox_sequence.size();
   for (int i = 0; i < traffic_requests.size(); ++i) {
     if (current_time != traffic_requests[i].arrival_time) {
       int nmbox = mbox_count.front();
       mbox_count.pop_front();
       fprintf(mbox_ratio_file, "%d %d %lu\n", current_time, nmbox,
-               traffic_requests[i].middlebox_sequence.size() * traffic_count);
+              traffic_requests[i].middlebox_sequence.size() * traffic_count);
       traffic_count = 0;
       current_time = traffic_requests[i].arrival_time;
     }
@@ -661,39 +678,40 @@ void ProcessMboxRatio(const std::string& output_file_prefix) {
   }
   if (!mbox_count.empty()) {
     fprintf(mbox_ratio_file, "%d %d %d\n", current_time, mbox_count.front(),
-             kMboxSeqSize * traffic_count);
+            kMboxSeqSize * traffic_count);
   }
   fclose(mbox_ratio_file);
 }
 
-void ProcessKHopsLogs(const std::string& output_file_prefix) {
+void ProcessKHopsLogs(const std::string &output_file_prefix) {
   std::vector<int> ihops, ehops;
-  const std::string kIngressKHopsFileName = output_file_prefix +
-                                              ".ingress_k.cdf";
-  const std::string kEgressKHopsFileName = output_file_prefix +
-                                             ".egress_k.cdf";
-  FILE* ingress_k_file = fopen(kIngressKHopsFileName.c_str(), "w");
-  FILE* egress_k_file = fopen(kEgressKHopsFileName.c_str(), "w");
+  const std::string kIngressKHopsFileName =
+      output_file_prefix + ".ingress_k.cdf";
+  const std::string kEgressKHopsFileName = output_file_prefix + ".egress_k.cdf";
+  FILE *ingress_k_file = fopen(kIngressKHopsFileName.c_str(), "w");
+  FILE *egress_k_file = fopen(kEgressKHopsFileName.c_str(), "w");
   for (int i = 0; i < traffic_requests.size(); ++i) {
-    for (auto& elem : ingress_k[i]) ihops.push_back(elem);
-    for (auto& elem : egress_k[i]) ehops.push_back(elem);
+    for (auto &elem : ingress_k[i])
+      ihops.push_back(elem);
+    for (auto &elem : egress_k[i])
+      ehops.push_back(elem);
   }
-  std::vector<std::pair<int,double>> ingress_k_cdf = GetCDF(ihops);
-  std::vector<std::pair<int,double>> egress_k_cdf = GetCDF(ehops);
-  for (auto& cdf : ingress_k_cdf) {
+  std::vector<std::pair<int, double> > ingress_k_cdf = GetCDF(ihops);
+  std::vector<std::pair<int, double> > egress_k_cdf = GetCDF(ehops);
+  for (auto &cdf : ingress_k_cdf) {
     fprintf(ingress_k_file, "%d %lf\n", cdf.first, cdf.second);
   }
-  for (auto& cdf : egress_k_cdf) {
+  for (auto &cdf : egress_k_cdf) {
     fprintf(egress_k_file, "%d %lf\n", cdf.first, cdf.second);
   }
   fclose(ingress_k_file);
   fclose(egress_k_file);
 }
 
-void ProcessNetUtilizationLogs(const std::string& output_file_prefix) {
+void ProcessNetUtilizationLogs(const std::string &output_file_prefix) {
   // Write time series data for utilization.
   const std::string kNetUtilTsFileName = output_file_prefix + ".netutil.ts";
-  FILE* netutil_ts_file = fopen(kNetUtilTsFileName.c_str(), "w");
+  FILE *netutil_ts_file = fopen(kNetUtilTsFileName.c_str(), "w");
   int current_time = traffic_requests[0].arrival_time;
   double current_util = 0.0;
   std::vector<double> netutil_ts_data;
@@ -714,19 +732,19 @@ void ProcessNetUtilizationLogs(const std::string& output_file_prefix) {
   double mean_util = GetMean(netutil_ts_data);
   double fifth_percentile_util = GetNthPercentile(netutil_ts_data, 5);
   double ninety_fifth_percentile_util = GetNthPercentile(netutil_ts_data, 95);
-  const std::string kNetUtilSummaryFileName = output_file_prefix +
-                                                ".netutil.summary";
-  FILE* netutil_summary_file = fopen(kNetUtilSummaryFileName.c_str(), "w");
+  const std::string kNetUtilSummaryFileName =
+      output_file_prefix + ".netutil.summary";
+  FILE *netutil_summary_file = fopen(kNetUtilSummaryFileName.c_str(), "w");
   fprintf(netutil_summary_file, "%lf %lf %lf\n", mean_util,
-              fifth_percentile_util, ninety_fifth_percentile_util);
+          fifth_percentile_util, ninety_fifth_percentile_util);
   fclose(netutil_summary_file);
 }
 
-void ProcessCostLogs(const std::string& output_file_prefix) {
+void ProcessCostLogs(const std::string &output_file_prefix) {
   const std::string kCostTsFileName = output_file_prefix + ".cost.ts";
   const std::string kAllCostFileName = output_file_prefix + ".cost.all";
-  FILE* cost_ts_file = fopen(kCostTsFileName.c_str(), "w");
-  FILE* all_cost_file = fopen(kAllCostFileName.c_str(), "w");
+  FILE *cost_ts_file = fopen(kCostTsFileName.c_str(), "w");
+  FILE *all_cost_file = fopen(kAllCostFileName.c_str(), "w");
   std::vector<double> cost_ts_data;
   // Log time series data for cost.
   int current_time = traffic_requests[0].arrival_time;
@@ -740,9 +758,9 @@ void ProcessCostLogs(const std::string& output_file_prefix) {
     if (current_time != traffic_requests[i].arrival_time) {
       current_cost += e_cost_ts[t];
       cost_ts_data.push_back(current_cost);
-      fprintf(cost_ts_file, "%d %lf %lf %lf %lf %lf\n", 
-              current_time, current_cost, current_d_cost, e_cost_ts[t],
-              current_t_cost, current_sla_cost);
+      fprintf(cost_ts_file, "%d %lf %lf %lf %lf %lf\n", current_time,
+              current_cost, current_d_cost, e_cost_ts[t], current_t_cost,
+              current_sla_cost);
       current_time = traffic_requests[i].arrival_time;
       current_cost = current_d_cost = current_e_cost = current_t_cost =
           current_sla_cost = 0.0;
@@ -757,12 +775,12 @@ void ProcessCostLogs(const std::string& output_file_prefix) {
     for (int j = 0; j < results[i].size(); ++j) {
       fprintf(all_cost_file, " %d", results[i][j]);
     }
-    fprintf(all_cost_file, " %lf %lf %lf %lf\n", energy_costs[i], transit_costs[i],
-            sla_costs[i], total_costs[i]);
+    fprintf(all_cost_file, " %lf %lf %lf %lf\n", energy_costs[i],
+            transit_costs[i], sla_costs[i], total_costs[i]);
   }
   cost_ts_data.push_back(current_cost + e_cost_ts[t]);
-  fprintf(cost_ts_file, "%d %lf %lf %lf %lf %lf\n", 
-          current_time, current_cost + e_cost_ts[t], current_d_cost, e_cost_ts[t],
+  fprintf(cost_ts_file, "%d %lf %lf %lf %lf %lf\n", current_time,
+          current_cost + e_cost_ts[t], current_d_cost, e_cost_ts[t],
           current_t_cost, current_sla_cost);
   fclose(cost_ts_file);
   fclose(all_cost_file);
@@ -771,40 +789,40 @@ void ProcessCostLogs(const std::string& output_file_prefix) {
   double mean_cost = GetMean(cost_ts_data);
   double fifth_percentile_cost = GetNthPercentile(cost_ts_data, 5);
   double ninety_fifth_percentile_cost = GetNthPercentile(cost_ts_data, 95);
-  FILE* cost_summary_file = fopen(kCostSummaryFileName.c_str(), "w");
-  fprintf(cost_summary_file, "%lf %lf %lf\n", mean_cost,
-          fifth_percentile_cost, ninety_fifth_percentile_cost);
+  FILE *cost_summary_file = fopen(kCostSummaryFileName.c_str(), "w");
+  fprintf(cost_summary_file, "%lf %lf %lf\n", mean_cost, fifth_percentile_cost,
+          ninety_fifth_percentile_cost);
   fclose(cost_summary_file);
 }
 
-void ProcessStretchLogs(const std::string& output_file_prefix) {
+void ProcessStretchLogs(const std::string &output_file_prefix) {
   const std::string kStretchFileName = output_file_prefix + ".stretch";
-  FILE* stretch_file = fopen(kStretchFileName.c_str(), "w");
-  std::vector<std::pair<double, double>> cdf = GetCDF(stretches);
+  FILE *stretch_file = fopen(kStretchFileName.c_str(), "w");
+  std::vector<std::pair<double, double> > cdf = GetCDF(stretches);
   for (int i = 0; i < cdf.size(); ++i) {
     fprintf(stretch_file, "%lf %lf\n", cdf[i].first, cdf[i].second);
   }
   fclose(stretch_file);
 }
 
-void ProcessServerUtilizationLogs(const std::string& output_file_prefix) {
+void ProcessServerUtilizationLogs(const std::string &output_file_prefix) {
   // Process utilization data. Also derive fragmentation data from utilization
   // data: fragmentation = 1 - utilization.
   const std::string kUtilTsFileName = output_file_prefix + ".serverutil.ts";
-  const std::string kFragmentationFileName = output_file_prefix +
-                                               ".serverfrag.ts";
+  const std::string kFragmentationFileName =
+      output_file_prefix + ".serverfrag.ts";
   FILE *util_ts_file = fopen(kUtilTsFileName.c_str(), "w");
   FILE *fragmentation_ts_file = fopen(kFragmentationFileName.c_str(), "w");
   int current_time = traffic_requests[0].arrival_time;
   std::vector<double> util_data;
   stats.server_stats.emplace_back(INF, NIL, INF);
-  std::vector<std::vector<double>> per_server_util;
+  std::vector<std::vector<double> > per_server_util;
   per_server_util.resize(graph.size());
   for (auto &server_stat : stats.server_stats) {
     if (server_stat.server_id != NIL) {
-      if (fabs(server_stat.utilization - 0.0) > EPS) { 
-        per_server_util[server_stat.server_id].push_back(
-                                                 server_stat.utilization);
+      if (fabs(server_stat.utilization - 0.0) > EPS) {
+        per_server_util[server_stat.server_id]
+            .push_back(server_stat.utilization);
       }
     }
     if (current_time != server_stat.timestamp) {
@@ -856,38 +874,39 @@ void ProcessServerUtilizationLogs(const std::string& output_file_prefix) {
   // Process CDF of mean server utilization.
   const std::string kServerUtilCdfFile = output_file_prefix + ".sutil.cdf";
   FILE *server_util_cdf_file = fopen(kServerUtilCdfFile.c_str(), "w");
-  std::vector<std::pair<double, double>> util_cdf = GetCDF(mean_util_data);
-  for (auto& cdf_data : util_cdf) {
+  std::vector<std::pair<double, double> > util_cdf = GetCDF(mean_util_data);
+  for (auto &cdf_data : util_cdf) {
     fprintf(server_util_cdf_file, "%lf %lf\n", cdf_data.first, cdf_data.second);
   }
   fclose(server_util_cdf_file);
 }
 
-void ProcessClosenessLogs(const std::string& output_file_prefix) {
+void ProcessClosenessLogs(const std::string &output_file_prefix) {
   const std::string kClosenessLogFile = output_file_prefix + ".closeness.cdf";
-  FILE* closeness_log = fopen(kClosenessLogFile.c_str(), "w");
+  FILE *closeness_log = fopen(kClosenessLogFile.c_str(), "w");
   std::vector<double> data;
   for (int i = 0; i < sol_closeness.size(); ++i) {
     for (int j = 0; j < sol_closeness[i].size(); ++j) {
       data.push_back(sol_closeness[i][j]);
     }
   }
-  std::vector<std::pair<double,double>> cdf = GetCDF(data);
+  std::vector<std::pair<double, double> > cdf = GetCDF(data);
   for (int i = 0; i < cdf.size(); ++i) {
     fprintf(closeness_log, "%lf %lf\n", cdf[i].first, cdf[i].second);
   }
   fclose(closeness_log);
 }
 
-std::vector<int> CplexComputePath(const std::vector<std::pair<int,int>>& edges,
-                                  const std::vector<int> sequence) {
+std::vector<int>
+CplexComputePath(const std::vector<std::pair<int, int> > &edges,
+                 const std::vector<int> sequence) {
   int source = sequence.front();
   int destination = sequence.back();
-  std::vector<std::vector<int>> adj;
+  std::vector<std::vector<int> > adj;
   adj.resize(graph.size());
   std::vector<int> indeg(graph.size(), 0);
   std::vector<int> outdeg(graph.size(), 0);
-  for (auto& edge : edges) {
+  for (auto &edge : edges) {
     adj[edge.first].push_back(edge.second);
     ++outdeg[edge.first];
     ++indeg[edge.second];
@@ -904,13 +923,14 @@ std::vector<int> CplexComputePath(const std::vector<std::pair<int,int>>& edges,
   std::stack<int> s;
   std::vector<int> path;
   int current_node = source;
-  while(true) {
+  while (true) {
     if (adj[current_node].empty()) {
       path.push_back(current_node);
       if (!s.empty()) {
         current_node = s.top();
         s.pop();
-      } else break;
+      } else
+        break;
     } else {
       s.push(current_node);
       int neighbor = adj[current_node].back();
@@ -922,4 +942,4 @@ std::vector<int> CplexComputePath(const std::vector<std::pair<int,int>>& edges,
   return path;
 }
 
-#endif  // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
+#endif // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
