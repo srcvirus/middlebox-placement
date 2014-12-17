@@ -1,5 +1,5 @@
 set terminal pdfcairo monochrome font "Helvetica,9" linewidth 4 rounded fontscale 1.0
-set style fill solid 1.00 border
+set style fill solid 0.25 border
 
 set style line 80 lt rgb "#000000"
 set style line 81 lt 0
@@ -16,15 +16,11 @@ set style line 2 lt rgb "#00A000" lw 2 pt 6
 set style line 3 lt rgb "#5060D0" lw 2 pt 2
 set style line 4 lt rgb "#F25900" lw 2 pt 9
 
-set output "traffic_dist_hw.pdf"
+set output "traffic_dist_3967.pdf"
 set xlabel "Time (min)"
 set ylabel "Fraction of Peak Traffic"
 set key outside horizontal
 
-set xr[0:1440]
-set yr[0:1.05]
-
-# set xr[0:10000]
-# set yr[0.6:1]
-
-plot "traffic-request.hw.dist" using 1:2 notitle w boxes 
+set yr[0.65:1.05]
+set xr[0:1260]
+plot "traffic-request.3967.dist" using 1:2 notitle w boxes

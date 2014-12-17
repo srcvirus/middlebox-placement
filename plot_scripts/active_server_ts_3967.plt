@@ -19,6 +19,6 @@ set xlabel "Time (min)"
 set ylabel "Number of Active Servers"
 set key outside horizontal
 
-set yr[13:16]
+set yr[11:16]
 
 plot "log.viterbi.3967.active_server.ts" using 1:2 title "Heuristic Solution" w line ls 1
