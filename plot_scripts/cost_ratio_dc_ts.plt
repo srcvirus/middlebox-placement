@@ -12,7 +12,7 @@ set origin 0,0
 
 set key right top
 set xr[0:40]
-set yr[1.1:1.45]
+set yr[1.0:1.45]
 set ytics 0.2 rotate by 90 offset 0,0.5
 
 set xlabel font "Helvetica,8"
@@ -52,7 +52,7 @@ set xlabel ""
 set ylabel ""
 unset xtics
 set xr[0:40]
-set yr[1.1:1.55]
+set yr[1.0:1.55]
 set ytics 0.2 rotate by 90 offset 0,0.5
 # set ytics 50
 

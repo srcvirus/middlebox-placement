@@ -148,11 +148,13 @@ void InitializeTopology(const char *filename) {
     graph[i].clear();
     shortest_path[i][i] = 0.0;
     shortest_edge_path[i][i] = 0;
+    bw[i][i] = 0;
     sp_pre[i][i] = NIL;
     for (int j = i + 1; j < node_count; j++) {
       shortest_path[i][j] = shortest_path[j][i] = INF;
       shortest_edge_path[i][j] = shortest_edge_path[j][i] = INF;
       sp_pre[i][j] = sp_pre[j][i] = NIL;
+      bw[i][j] = bw[j][i] = 0;
     }
   }
   DEBUG("nodes.size() = %u\n", nodes.size());
@@ -171,6 +173,7 @@ void InitializeTopology(const char *filename) {
           nodes[source].GetDebugString().c_str());
     graph[source].emplace_back(&nodes[destination], bandwidth, delay);
     graph[destination].emplace_back(&nodes[source], bandwidth, delay);
+    bw[source][destination] = bw[destination][source] = bandwidth;
     shortest_edge_path[source][destination] = 1;
     shortest_edge_path[destination][source] = 1;
     shortest_path[source][destination] = shortest_path[destination][source] =

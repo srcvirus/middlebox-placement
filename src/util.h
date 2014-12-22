@@ -115,11 +115,7 @@ inline void RefreshServerStats(int timestamp) {
 }
 
 inline unsigned long GetEdgeResidualBandwidth(int source, int destination) {
-  for (auto &endpoint : graph[source]) {
-    if (endpoint.u->node_id == destination)
-      return endpoint.residual_bandwidth;
-  }
-  return NIL;
+  return bw[source][destination];
 }
 
 inline unsigned long GetPathResidualBandwidth(int source, int destination) {
@@ -129,7 +125,6 @@ inline unsigned long GetPathResidualBandwidth(int source, int destination) {
     path_ptr = path_cache[cache_index].get();
   } else {
     path_cache[cache_index] = ComputeShortestPath(source, destination);
-    //    path_cache[cache_index] = std::move(path);
     path_ptr = path_cache[cache_index].get();
   }
   unsigned long residual_bandwidth = 100000000000000L;
@@ -145,10 +140,8 @@ inline unsigned long GetPathResidualBandwidth(int source, int destination) {
 
 inline void ReduceEdgeResidualBandwidth(int source, int destination,
                                         unsigned long bandwidth) {
-  for (auto &endpoint : graph[source]) {
-    if (endpoint.u->node_id == destination)
-      endpoint.residual_bandwidth -= bandwidth;
-  }
+  bw[source][destination] -= bandwidth;
+  bw[destination][source] -= bandwidth;
 }
 
 void DecommissionAllMiddleboxes() {
@@ -157,9 +150,12 @@ void DecommissionAllMiddleboxes() {
 }
 
 void ReleaseBandwidth() {
-  for (auto &adj_list : graph) {
+  for (int i = 0; i < graph.size(); ++i) {
+    auto& adj_list = graph[i];
     for (auto &endpoint : adj_list) {
       endpoint.residual_bandwidth = endpoint.bandwidth;
+      bw[i][endpoint.u->node_id] = 
+        bw[endpoint.u->node_id][i] = endpoint.bandwidth;
     }
   }
 }
@@ -290,20 +286,11 @@ double GetSLAViolationCost(int source, int destination, double max_delay,
 
 inline double GetTransitCost(int prev_node, int current_node,
                              const traffic_request &t_request) {
-  std::vector<int> *path_ptr = nullptr;
-  std::pair<int, int> cache_index(prev_node, current_node);
-  if (path_cache[cache_index]) {
-    path_ptr = path_cache[cache_index].get();
-  } else {
-    path_cache[cache_index] = ComputeShortestPath(prev_node, current_node);
-    path_ptr = path_cache[cache_index].get();
-  }
-  if (path_ptr) {
-    int path_length = path_ptr->size() - 1;
-    return (1.0 / 1000.0) * path_length * per_bit_transit_cost *
-           t_request.min_bandwidth * t_request.duration;
-  }
-  return INF;
+  int path_length = shortest_edge_path[prev_node][current_node];
+  if (path_length >= INF)
+    return INF;
+  return (1.0 / 1000.0) * path_length * per_bit_transit_cost *
+         t_request.min_bandwidth * t_request.duration;
 }
 
 double GetServerEnergyConsumption(int num_cores_used) {

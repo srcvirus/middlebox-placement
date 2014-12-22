@@ -15,7 +15,7 @@
 #define NIL -1
 #define EPS 1e-9
 
-#define NUM_CORES_PER_SERVER 32
+#define NUM_CORES_PER_SERVER 160 
 // #define SERVER_IDLE_ENERGY 0.0   // Kilo Watt
 // #define SERVER_PEAK_ENERGY 0.135 // Kilo Watt
 #define SERVER_IDLE_ENERGY 0.0805   // Kilo Watt
@@ -208,6 +208,7 @@ extern double cost[MAXN][MAXN];
 extern int pre[MAXN][MAXN];
 extern int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 extern int shortest_edge_path[MAXN][MAXN];
+extern long bw[MAXN][MAXN];
 extern int max_time;
 extern middlebox fake_mbox;
 extern std::vector<std::vector<int> > results;

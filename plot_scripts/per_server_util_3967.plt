@@ -14,13 +14,12 @@ set ytics nomirror
 
 set style line 1 lt rgb "#A00000" lw 1 pt 1
 set style line 2 lt rgb "#00A000" lw 1 pt 6 
-
-set output "per_server_util_i2.pdf"
+ 
+set output "per_server_util_3967.pdf"
 set xlabel "Server ID"
 set ylabel "Mean Utilization"
 set key outside horizontal
 
 set yr[0:1.05]
 
-plot 'log.viterbi.i2.per_server_util' using 2:3:4:xtic(1) title "Heuristic Solution"  fs pattern 7 ls 1, \
-     'log.cplex.i2.per_server_util' using 2:3:4:xtic(1) title "CPLEX Solution" fs  pattern 2 ls 2
+plot 'log.viterbi.3967.per_server_util' using 2:3:4:xtic(1) title "Heuristic Solution"  fs pattern 7 ls 1
