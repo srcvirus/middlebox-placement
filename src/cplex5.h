@@ -29,6 +29,12 @@ typedef IloArray<IloInt2dArray> IloInt3dArray;
 
 typedef IloArray<IloExprArray> IloExpr2dArray;
 
+#ifdef LONGBAND
+typedef long bandwidth;
+#else
+typedef int bandwidth;
+#endif
+
 void print_IloInt2dArray(IloInt2dArray a, int dimension1, int dimension2,
                          string name) {
   DEBUG("%s\n", name.c_str());
@@ -122,9 +128,9 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     int switch4server[kServerCount];
     std::vector<int> server4switch[kSwitchCount];
     int actual_server[kServerCount];
-    int _beta[kSwitchCount][kSwitchCount];
+    bandwidth _beta[kSwitchCount][kSwitchCount];
     int _delta[kSwitchCount][kSwitchCount];
-    int max_beta = 0;
+    bandwidth max_beta = 0;
     int max_delta = 0;
 
     //////////CPLEX Variable//////////
@@ -210,9 +216,13 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     }
 
     // read link info from file
-    int b;
+    bandwidth b;
     for (int _l = 0, _u, _v, d; _l < kLinkCount; ++_l) {
+      #ifdef LONGBAND
+      fscanf(topology_file, "%d %d %ld %d", &_u, &_v, &b, &d);
+      #else
       fscanf(topology_file, "%d %d %d %d", &_u, &_v, &b, &d);
+      #endif
       _beta[_u][_v] = b;
       _beta[_v][_u] = b;
       _delta[_u][_v] = d;
@@ -763,7 +773,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
               }
             }
           }
-          //cout << "_u _v " << _u << " " << _v << " " << beta_u_v[_u][_v] << endl;
+          //cout << "_u _v " << _u << " " << _v << " " << _beta[_u][_v] << endl;
           model.add(sum <= _beta[_u][_v]);
         }
       }
@@ -834,8 +844,7 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
           sum += xtnm[t][n][m] * beta_min;
         }
       }
-      //model.add(IloIfThen(env, (ym[m] == 1), (sum <= K_m[m])));
-      //model.add(sum <= K_m[m]+ 1000);
+      model.add(sum <= K_m[m]);
       //cout << " K_m " << K_m[m] << " for m = " << m << endl;
     }
     //---------------------------------------------------------------------
