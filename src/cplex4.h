@@ -1008,11 +1008,13 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     cplex.setOut(env.getNullStream());
     #endif
     // set time limit
-    const IloInt timeLimit = 60 * 60 * 2;  // two hours
+    const IloInt timeLimit = 60 * 60 ;  // one hour
     const IloNum relativeGap = 0.001; // find Integer solution within 0.1% of optimal
     cplex.setParam(IloCplex::TiLim, timeLimit);
     //cplex.setParam(IloCplex::EpGap, relativeGap);
-    //cplex.setParam(IloCplex::Threads, 2);
+    cplex.setParam(IloCplex::Threads, 8);
+    cplex.setParam(IloCplex::MemoryEmphasis, true);
+    cplex.setParam(IloCplex::PreDual, true);
     if (!cplex.solve()) {
       timer.stop();
       cout << "Could not solve ILP!" << endl;
