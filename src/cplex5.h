@@ -293,10 +293,12 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     for (int t = 0; t < traffic_requests.size(); ++t) {
      total_bw += traffic_requests[t].min_bandwidth;
     }
+    //cout << "TB " << total_bw << endl;
+
     int kMboxCount = 0;
     std::vector<int> mboxType;
     
-    int switch4mbox[kMboxCount];
+    std::vector<int> switch4mbox;
     std::vector<int> mbox4switch[kSwitchCount];  
     
     std::vector<int> server4mbox;
@@ -307,26 +309,28 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
         if (dp_n[p][_n] == 1) {
           if (p == 0 || p == 1) {
             mbox4server[_n].push_back(kMboxCount);
-            switch4mbox[kMboxCount] = switch4server[_n];
             mbox4switch[switch4server[_n]].push_back(kMboxCount);
             kMboxCount++;
             server4mbox.push_back(_n);
+            switch4mbox.push_back(switch4server[_n]);
             mboxType.push_back(p);
           } else {
             //# of deployable mbox = resource-cap/resource-req
             mcount = floor(c_nr[_n][0] * 1.0 / middleboxes[p - 2].cpu_requirement);
             mcount_bw = ceil(total_bw * 1.0 / middleboxes[p - 2].processing_capacity);
-            mcount = min(mcount, mcount_bw);             
+            mcount = min(mcount, mcount_bw); 
+            //cout << "mcount " << mcount << endl;            
             for (int i = 0; i < mcount; ++i) {
               server4mbox.push_back(_n);
+              switch4mbox.push_back(switch4server[_n]);
               mboxType.push_back(p);
               mbox4server[_n].push_back(kMboxCount + i);
-              switch4mbox[kMboxCount + i] = switch4server[_n];
               mbox4switch[switch4server[_n]].push_back(kMboxCount + i);
             }
             kMboxCount += mcount;
           }
         }
+        //cout << "kMboxCount " << kMboxCount << endl;
       }
     }
 
