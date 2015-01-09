@@ -15,7 +15,7 @@ set style line 3 lt rgb "#5060D0" lw 2 pt 2
 set style line 4 lt rgb "#F25900" lw 2 pt 9
 
 set output "utilization_time_series_i2.pdf"
-set xlabel "Time (s)"
+set xlabel "Time (min)"
 set ylabel "Mean Utilization"
 set key outside horizontal
 

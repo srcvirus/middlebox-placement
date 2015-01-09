@@ -4,11 +4,13 @@
 #include "viterbi.h"
 
 #ifdef CPLEX_HW
-  #include "cplex4-hw.h"
+#include "cplex4-hw.h"
 #elif CPLEX_HB
-  #include "cplex4-hb.h"
+#include "cplex4-hb.h"
+#elif CPLEX5
+#include "cplex5.h"
 #else
-  #include "cplex4.h"
+#include "cplex4.h"
 #endif
 
 #include <chrono>

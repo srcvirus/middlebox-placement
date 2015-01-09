@@ -1,4 +1,4 @@
-set terminal pdfcairo font "Helvetica,9" linewidth 4 rounded fontscale 1.0
+set terminal pdfcairo font "Helvetica,9" dashed linewidth 4 rounded fontscale 1.0
 set style line 80 lt rgb "#808080"
 set style line 81 lt 0
 set style line 81 lt rgb "#808080"
@@ -15,10 +15,11 @@ set style line 3 lt rgb "#5060D0" lw 2 pt 2
 set style line 4 lt rgb "#F25900" lw 2 pt 9
 
 set output "ingress_k_3967_cdf.pdf"
-set xlabel "Hop Distance of Middlebox from Ingress Switch"
+set xlabel "Hop Distance"
 set ylabel "CDF"
 set key right bottom 
 
 set yr[0:1.05]
 
-plot "log.viterbi.3967.ingress_k.cdf" using 1:2 title "Heuristic-AS3967" w linespoints ls 1
+plot "log.viterbi.3967.ingress_k.cdf" using 1:2 title "Heuristic-AS3967-Ingress" w linespoints ls 1, \
+     "log.viterbi.3967.egress_k.cdf" using 1:2 title "Heuristic-AS3967-Egress" w linespoints ls 2
