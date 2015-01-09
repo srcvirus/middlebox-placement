@@ -204,6 +204,7 @@ void InitializeTopology(const char *filename) {
     }
     closeness[i] = 1.0 / farness;
   }
+  fclose(file_ptr);
 }
 
 #endif  // MIDDLEBOX_PLACEMENT_SRC_IO_H_
