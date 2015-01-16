@@ -8,10 +8,10 @@
 0,0,8,102400,741,0.00000010,proxy,firewall,ids
 0,0,9,112400,721,0.00000010,proxy,ids,firewall
 0,0,10,95700,731,0.00000010,proxy,firewall,ids
-0,0,11,2747400,733,0.00000010,ids,firewall,proxy
-0,1,0,1215800,718,0.00000010,ids,firewall,proxy
-0,1,2,2101100,737,0.00000010,ids,proxy,firewall
-0,1,3,2029700,721,0.00000010,firewall,proxy,ids
+0,0,11,600000,733,0.00000010,ids,firewall,proxy
+0,1,0,600000,718,0.00000010,ids,firewall,proxy
+0,1,2,600000,737,0.00000010,ids,proxy,firewall
+0,1,3,600000,721,0.00000010,firewall,proxy,ids
 0,1,4,121600,720,0.00000010,firewall,proxy,ids
 0,1,5,356600,735,0.00000010,ids,proxy,firewall
 0,1,6,252000,723,0.00000010,ids,proxy,firewall
@@ -75,10 +75,10 @@
 0,6,9,63900,724,0.00000010,ids,proxy,firewall
 0,6,10,129500,715,0.00000010,firewall,proxy,ids
 0,6,11,240500,744,0.00000010,firewall,ids,proxy
-0,7,0,685600,718,0.00000010,firewall,ids,proxy
-0,7,1,788100,724,0.00000010,firewall,proxy,ids
-0,7,2,664700,718,0.00000010,firewall,ids,proxy
-0,7,3,719500,739,0.00000010,proxy,firewall,ids
+0,7,0,600000,718,0.00000010,firewall,ids,proxy
+0,7,1,600000,724,0.00000010,firewall,proxy,ids
+0,7,2,600000,718,0.00000010,firewall,ids,proxy
+0,7,3,600000,739,0.00000010,proxy,firewall,ids
 0,7,4,471800,716,0.00000010,ids,proxy,firewall
 0,7,5,289600,721,0.00000010,ids,proxy,firewall
 0,7,6,295800,735,0.00000010,firewall,proxy,ids
@@ -108,8 +108,8 @@
 0,9,8,102600,723,0.00000010,proxy,ids,firewall
 0,9,10,180100,741,0.00000010,ids,firewall,proxy
 0,9,11,246000,722,0.00000010,proxy,firewall,ids
-0,10,0,758600,740,0.00000010,firewall,ids,proxy
-0,10,1,659500,721,0.00000010,ids,proxy,firewall
+0,10,0,600000,740,0.00000010,firewall,ids,proxy
+0,10,1,600000,721,0.00000010,ids,proxy,firewall
 0,10,2,312400,734,0.00000010,proxy,firewall,ids
 0,10,3,303400,744,0.00000010,ids,firewall,proxy
 0,10,4,485800,738,0.00000010,firewall,proxy,ids
@@ -129,4 +129,4 @@
 0,11,7,537900,720,0.00000010,proxy,ids,firewall
 0,11,8,351900,719,0.00000010,proxy,firewall,ids
 0,11,9,558800,726,0.00000010,ids,firewall,proxy
-0,11,10,891400,720,0.00000010,proxy,firewall,ids
+0,11,10,600000,720,0.00000010,proxy,firewall,ids

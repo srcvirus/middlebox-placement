@@ -8,10 +8,10 @@
 0,0,8,87756,741,0.00000010,proxy,firewall,ids
 0,0,9,96326,721,0.00000010,proxy,ids,firewall
 0,0,10,82014,731,0.00000010,proxy,firewall,ids
-0,0,11,2354521,733,0.00000010,ids,firewall,proxy
-0,1,0,1041940,718,0.00000010,ids,firewall,proxy
-0,1,2,1800642,737,0.00000010,ids,proxy,firewall
-0,1,3,1739452,721,0.00000010,firewall,proxy,ids
+0,0,11,600000,733,0.00000010,ids,firewall,proxy
+0,1,0,600000,718,0.00000010,ids,firewall,proxy
+0,1,2,600000,737,0.00000010,ids,proxy,firewall
+0,1,3,600000,721,0.00000010,firewall,proxy,ids
 0,1,4,104211,720,0.00000010,firewall,proxy,ids
 0,1,5,305606,735,0.00000010,ids,proxy,firewall
 0,1,6,215964,723,0.00000010,ids,proxy,firewall
@@ -76,9 +76,9 @@
 0,6,10,110981,715,0.00000010,firewall,proxy,ids
 0,6,11,206108,744,0.00000010,firewall,ids,proxy
 0,7,0,587559,718,0.00000010,firewall,ids,proxy
-0,7,1,675401,724,0.00000010,firewall,proxy,ids
+0,7,1,600000,724,0.00000010,firewall,proxy,ids
 0,7,2,569647,718,0.00000010,firewall,ids,proxy
-0,7,3,616611,739,0.00000010,proxy,firewall,ids
+0,7,3,600000,739,0.00000010,proxy,firewall,ids
 0,7,4,404332,716,0.00000010,ids,proxy,firewall
 0,7,5,248187,721,0.00000010,ids,proxy,firewall
 0,7,6,253500,735,0.00000010,firewall,proxy,ids
@@ -108,7 +108,7 @@
 0,9,8,87928,723,0.00000010,proxy,ids,firewall
 0,9,10,154345,741,0.00000010,ids,firewall,proxy
 0,9,11,210822,722,0.00000010,proxy,firewall,ids
-0,10,0,650120,740,0.00000010,firewall,ids,proxy
+0,10,0,600000,740,0.00000010,firewall,ids,proxy
 0,10,1,565191,721,0.00000010,ids,proxy,firewall
 0,10,2,267726,734,0.00000010,proxy,firewall,ids
 0,10,3,260013,744,0.00000010,ids,firewall,proxy
@@ -129,4 +129,4 @@
 0,11,7,460980,720,0.00000010,proxy,ids,firewall
 0,11,8,301578,719,0.00000010,proxy,firewall,ids
 0,11,9,478891,726,0.00000010,ids,firewall,proxy
-0,11,10,763929,720,0.00000010,proxy,firewall,ids
+0,11,10,600000,720,0.00000010,proxy,firewall,ids

@@ -790,6 +790,16 @@ void ProcessStretchLogs(const std::string &output_file_prefix) {
     fprintf(stretch_file, "%lf %lf\n", cdf[i].first, cdf[i].second);
   }
   fclose(stretch_file);
+  const std::string kStretchSummaryFileName = output_file_prefix + 
+                                                ".stretch.summary";
+  FILE* stretch_summary_file = fopen(kStretchSummaryFileName.c_str(),
+                                      "w");
+  double mean_stretch = GetMean(stretches);
+  double first_percentile_stretch = GetNthPercentile(stretches, 1);
+  double ninety_ninth_percentile_stretch = GetNthPercentile(stretches, 99);
+  fprintf(stretch_summary_file, "%lf %lf %lf\n", mean_stretch,
+    first_percentile_stretch, ninety_ninth_percentile_stretch);
+  fclose(stretch_summary_file);
 }
 
 void ProcessServerUtilizationLogs(const std::string &output_file_prefix) {
