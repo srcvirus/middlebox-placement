@@ -408,7 +408,7 @@ void ComputeSolutionCosts(const std::vector<std::vector<int> > &solutions) {
       current_time = traffic_requests[i].arrival_time;
       int n_deployed = 0;
       for (int j = 0; j < deployed_mboxes.size(); ++j)
-        n_deployed += deployed_mboxes.size();
+        n_deployed += deployed_mboxes[j].size();
       mbox_count.push_back(n_deployed);
       ReleaseAllResources();
     }
@@ -488,6 +488,11 @@ void ComputeSolutionCosts(const std::vector<std::vector<int> > &solutions) {
   num_active_servers.push_back(
       std::pair<int, int>(current_time, active_servers));
   e_cost_ts.push_back(er_cost);
+  int n_deployed = 0;
+  for (int j = 0; j < deployed_mboxes.size(); ++j)
+    n_deployed += deployed_mboxes[j].size();
+  mbox_count.push_back(n_deployed);
+  ReleaseAllResources();
 }
 
 double GetSolutionStretch(const std::vector<int> &result) {
