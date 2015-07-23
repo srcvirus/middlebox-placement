@@ -239,13 +239,17 @@ int main(int argc, char *argv[]) {
   } else if (algorithm == "viterbi") {
     int current_time = traffic_requests[0].arrival_time;
     unsigned long long elapsed_time = 0;
+    unsigned long long current_solution_time = 0;
     stats.num_accepted = stats.num_rejected = 0;
     const int kNumTrafficRequests = static_cast<int>(traffic_requests.size());
     for (int i = 0; i < kNumTrafficRequests; ++i) {
       // traffic_requests[i].duration = 6300; // 300;
       if (current_time != traffic_requests[i].arrival_time) {
         // RefreshServerStats(current_time);
+        printf("Current time = %d, Solution time = %llu.%llu\n", 
+            current_time, current_solution_time / ONE_GIG, current_solution_time % ONE_GIG);
         current_time = traffic_requests[i].arrival_time;
+        current_solution_time = 0;
         ReleaseAllResources();
       }
 
@@ -254,9 +258,11 @@ int main(int argc, char *argv[]) {
       std::unique_ptr<std::vector<int> > result =
           ViterbiCompute(traffic_requests[i]);
       auto solution_end_time = std::chrono::high_resolution_clock::now();
-      elapsed_time += std::chrono::duration_cast<std::chrono::nanoseconds>(
-          solution_end_time - solution_start_time).count();
-
+      unsigned long long solution_time = 
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            solution_end_time - solution_start_time).count();
+      current_solution_time += solution_time;
+      elapsed_time += solution_time;
       UpdateResources(result.get(), traffic_requests[i]);
       RefreshServerStats(current_time);
       // printf("i = %d, %s\n", i, traffic_requests[i].GetDebugString().c_str());
@@ -264,11 +270,14 @@ int main(int argc, char *argv[]) {
       if (i % 500 == 0) {
         double percentage_completed = 100.0 * static_cast<double>(i) /
                                       static_cast<double>(kNumTrafficRequests);
-        printf("%.2lf%% traffics completed\n", percentage_completed);
+        // printf("%.2lf%% traffics completed\n", percentage_completed);
       }
       all_results.push_back(std::move(result));
     }
 
+    printf("Current time = %d, Solution time = %llu.%llu\n", 
+          current_time, current_solution_time / ONE_GIG, 
+          current_solution_time % ONE_GIG);
     // Print the solution time.
     printf("Solution time: %llu.%llus\n", elapsed_time / ONE_GIG,
            elapsed_time % ONE_GIG);
