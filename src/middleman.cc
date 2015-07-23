@@ -9,6 +9,8 @@
 #include "cplex4-hb.h"
 #elif CPLEX5
 #include "cplex5.h"
+#elif CPLEX_PZ
+#include "cplex4-pz.h"
 #else
 #include "cplex4.h"
 #endif
