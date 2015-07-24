@@ -115,8 +115,8 @@ int main(int argc, char *argv[]) {
       current_time = traffic_requests[i].arrival_time;
 
       std::vector<int> sequence[current_traffic_requests.size()];
-      std::vector<std::pair <int, int> > edges[current_traffic_requests.size()];
-      std::vector<std::pair <int, int> > all_edges[current_traffic_requests.size()];
+      std::vector<std::vector<std::pair <int, int> >> edges(current_traffic_requests.size());
+      std::vector<std::vector<std::pair <int, int> >> all_edges(current_traffic_requests.size());
       int delays[current_traffic_requests.size()];
       std::vector<double> opex_breakdown;
       std::vector<int> utilization;
@@ -137,9 +137,9 @@ int main(int argc, char *argv[]) {
       fprintf(cost_log_file, "\n");
 
       // sequence & path log
-      for (int i = 0; i < current_traffic_requests.size(); ++i) {
+      for (int ii = 0; ii < current_traffic_requests.size(); ++ii) {
         // sequence
-        std::vector<int> seq = sequence[i];
+        std::vector<int> seq = sequence[ii];
         /*        
         for (int s : seq) {
           cout << s << " ";
@@ -155,8 +155,8 @@ int main(int argc, char *argv[]) {
         fprintf(sequence_log_file, "\n");
 
         // path
-        std::vector<std::pair <int, int> > edge_list = edges[i];
-        std::vector<std::pair <int, int> > all_edge_list = all_edges[i];
+        std::vector<std::pair <int, int> > edge_list = edges[ii];
+        std::vector<std::pair <int, int> > all_edge_list = all_edges[ii];
         /*
         for (std::pair<int, int> edge: edge_list) {
           cout << "(" << edge.first << ", " << edge.second << ") ";
@@ -167,6 +167,11 @@ int main(int argc, char *argv[]) {
         }
         cout << endl;
         */
+        DEBUG("Computing path for traffic %d\n", ii);
+        for (auto& edge : edges[ii]) {
+          DEBUG("(%d, %d)\n", edge.first, edge.second);
+        }
+        DEBUG("input sent\n");
         std::vector<int> path = CplexComputePath(edge_list, seq);
         for (int j = 0; j < path.size(); ++j) {
           fprintf(path_log_file, "%d", path[j]);

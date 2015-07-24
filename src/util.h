@@ -909,6 +909,7 @@ CplexComputePath(const std::vector<std::pair<int, int> > &edges,
   std::vector<int> indeg(graph.size(), 0);
   std::vector<int> outdeg(graph.size(), 0);
   for (auto &edge : edges) {
+    DEBUG("(%d, %d)\n", edge.first, edge.second);
     adj[edge.first].push_back(edge.second);
     ++outdeg[edge.first];
     ++indeg[edge.second];
@@ -918,6 +919,7 @@ CplexComputePath(const std::vector<std::pair<int, int> > &edges,
       if (i != source && i != destination) {
         assert(indeg[i] == outdeg[i]);
       } else {
+        DEBUG("node = %d, indeg = %d, outdeg = %d\n", i, indeg[i], outdeg[i]);
         assert(abs(indeg[i] - outdeg[i]) == 1);
       }
     }

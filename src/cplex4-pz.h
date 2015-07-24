@@ -14,6 +14,7 @@
 #include <cmath>
 #include <climits>
 #include <utility>
+#include <chrono>
 
 #include <ilcplex/ilocplex.h>
 ILOSTLBEGIN
@@ -58,8 +59,8 @@ void run_cplex_opt(std::vector<traffic_request> traffic_requests,
               double &opex, std::vector<double> &opex_breakdown,
               double &running_time, 
               std::vector<int> *sequence, 
-              std::vector<std::pair <int, int> > *path, 
-              std::vector<std::pair <int, int> > *all_edges, 
+              std::vector<std::vector<std::pair <int, int> >>& path, 
+              std::vector<std::vector<std::pair <int, int> >>& all_edges, 
               int *delays,
               std::vector<int> &utilization,
               string topology_filename,
@@ -70,11 +71,13 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
               double &opex, std::vector<double> &opex_breakdown,
               double &running_time, 
               std::vector<int> *sequence, 
-              std::vector<std::pair <int, int> > *path, 
-              std::vector<std::pair <int, int> > *all_edges, 
+              std::vector<std::vector<std::pair <int, int> >>& path, 
+              std::vector<std::vector<std::pair <int, int> >>& all_edges, 
               int *delays,
               std::vector<int> &utilization,
               string topology_filename){
+
+  auto solution_start_time = std::chrono::high_resolution_clock::now();
 
   int lower_bound = 1;
   int upper_bound = traffic_requests.size() * 3;
@@ -85,11 +88,11 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
   int is_feasible = 0; // 0 = Infeasible, 1 = feasible
 
   while (max_vnf != last_max_vnf) {
-    cout << "Run Max VNF = " << max_vnf << endl;
+    //cout << "Run Max VNF = " << max_vnf << endl;
     last_max_vnf = max_vnf;
     run_cplex_opt(traffic_requests, opex, opex_breakdown, running_time, sequence, path, all_edges, delays, utilization, topology_filename, max_vnf, is_feasible);
     if (is_feasible) {
-      cout << "Soultion found" << endl;
+      //cout << "Soultion found" << endl;
       upper_bound = max_vnf;
     }
     else {
@@ -98,14 +101,21 @@ void run_cplex(std::vector<traffic_request> traffic_requests,
     max_vnf = ceil((lower_bound + upper_bound) / 2.0);
   }
 
+  auto solution_end_time = std::chrono::high_resolution_clock::now();
+  unsigned long long solution_time = 
+        std::chrono::duration_cast<std::chrono::nanoseconds>(solution_end_time - solution_start_time).count();
+
+  printf("time_instance %d vnf_count %d running_time %llu.%llu\n", traffic_requests[0].arrival_time, max_vnf, 
+    solution_time / ONE_GIG, solution_time % ONE_GIG);
+
 }
 
 void run_cplex_opt(std::vector<traffic_request> traffic_requests, 
               double &opex, std::vector<double> &opex_breakdown,
               double &running_time, 
               std::vector<int> *sequence, 
-              std::vector<std::pair <int, int> > *path, 
-              std::vector<std::pair <int, int> > *all_edges, 
+              std::vector<std::vector<std::pair <int, int> >>& path, 
+              std::vector<std::vector<std::pair <int, int> >>& all_edges, 
               int *delays,
               std::vector<int> &utilization,
               string topology_filename,
@@ -1095,15 +1105,10 @@ void run_cplex_opt(std::vector<traffic_request> traffic_requests,
     cplex.setParam(IloCplex::PreDual, true);
     if (!cplex.solve()) {
       timer.stop();
-      cout << "Could not solve ILP!" << endl;
-      cout << "Solution Status = " << cplex.getStatus() << endl;
-      if (cplex.getStatus() == IloAlgorithm::Status::Feasible || cplex.getStatus() == IloAlgorithm::Status::Optimal) {
-        is_feasible = 1;
-      }
-      else {
-        is_feasible = 0;
-        return;
-      }
+      //cout << "Could not solve ILP!" << endl;
+      //cout << "Solution Status = " << cplex.getStatus() << endl;
+      is_feasible = 0;
+      return;
       /*
       cout << "cnst size " << cnst.getSize() << endl;
       if(cplex.refineConflict(cnst, pref)) {
@@ -1119,13 +1124,14 @@ void run_cplex_opt(std::vector<traffic_request> traffic_requests,
         }
       }
       */
-      throw(-1);
+      //throw(-1);
     }
     timer.stop();
     
     //opex = cplex.getObjValue();
 
-    cout << "Solution Status = " << cplex.getStatus() << endl;
+    //cout << "Solution Status = " << cplex.getStatus() << endl;
+    is_feasible = 1;
     //cout << "Solution Value = " << opex << endl;
 
     // print xtnm
@@ -1180,6 +1186,7 @@ void run_cplex_opt(std::vector<traffic_request> traffic_requests,
     //print wtuv_u_v
     //cout << endl;
     for (int t = 0; t < kTrafficCount; ++t) {
+      path[t].clear();
       for (int n1 = 0; n1 < trafficNodeCount[t]; ++n1) {
         for (int n2 : nbr[t][n1]) {
           if (n1 < n2) {
@@ -1188,8 +1195,9 @@ void run_cplex_opt(std::vector<traffic_request> traffic_requests,
               for (int _v : __nbr[_u]) {
                 value = cplex.getValue(wtuv_u_v[t][n1][n2][_u][_v]);
                 if (fabs(value - 1) < EPS) {
-                  DEBUG("Traffic %d link (%d, %d) mapped to phy. link (%d, %d)\n", t, n1, n2, _u, _v);
+                  // DEBUG("Traffic %d link (%d, %d) mapped to phy. link (%d, %d)\n", t, n1, n2, _u, _v);
                   if (_u < kInitialSwitchCount && _v < kInitialSwitchCount) {
+                    DEBUG("Traffic %d link (%d, %d) mapped to phy. link (%d, %d)\n", t, n1, n2, _u, _v);
                     path[t].push_back(std::make_pair(_u, _v));
                   }
                   all_edges[t].push_back(std::make_pair(_u, _v));
@@ -1200,6 +1208,13 @@ void run_cplex_opt(std::vector<traffic_request> traffic_requests,
         }
       }
     }
+
+    DEBUG("CPLEX print path[0]\n");
+    for ( auto& edge : path[0]) {
+      DEBUG("(%d, %d)\n", edge.first, edge.second);
+    }
+    DEBUG("\n");
+
 
     IloNum depCost = 0.0;
     IloNum enrCost = 0.0;
