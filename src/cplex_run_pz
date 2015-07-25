@@ -1,0 +1,1 @@
+./middleman --per_core_cost=0.01 --per_bit_transit_cost=3.626543209876543e-7 --topology_file=3967.topo --middlebox_spec_file=middlebox-spec --traffic_request_file=traffic-request.3967.comparison --max_time=100 --algorithm=cplex
