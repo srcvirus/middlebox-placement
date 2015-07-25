@@ -10,7 +10,7 @@
 #elif CPLEX5
 #include "cplex5.h"
 #elif CPLEX_PZ
-#include "cplex4-pz.h"
+#include "cplex5-pz.h"
 #else
 #include "cplex4.h"
 #endif
@@ -126,8 +126,8 @@ int main(int argc, char *argv[]) {
       
       processed_traffic += current_traffic_requests.size();
 
-      cout << processed_traffic * 100.0 / traffic_requests.size()
-           << "% Traffic processed." << endl;
+      //cout << processed_traffic * 100.0 / traffic_requests.size()
+      //     << "% Traffic processed." << endl;
 
       // cost log
       fprintf(cost_log_file, "%lf ", opex);
