@@ -1,1 +1,1 @@
-g++ -g -std=c++11 log_processor.cc -o log_processor
+g++ -g -std=c++11 -DDBG log_processor.cc -o log_processor

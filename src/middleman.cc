@@ -33,15 +33,15 @@ const std::string kUsage =
 std::vector<middlebox> middleboxes;
 std::vector<traffic_request> traffic_requests;
 std::vector<node> nodes;
-std::vector<std::vector<edge_endpoint> > graph;
+std::vector<std::vector<edge_endpoint>> graph;
 std::vector<double> closeness;
-std::vector<std::vector<middlebox_instance> > deployed_mboxes;
+std::vector<std::vector<middlebox_instance>> deployed_mboxes;
 std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs,
     total_costs, stretches;
 std::vector<double> e_cost_ts;
 std::vector<std::vector<int>> ingress_k, egress_k;
-std::vector<std::pair<int,int>> num_active_servers;
-std::vector<std::vector<double>> sol_closeness; 
+std::vector<std::pair<int, int>> num_active_servers;
+std::vector<std::vector<double>> sol_closeness;
 std::list<int> mbox_count;
 std::vector<int> num_service_points;
 std::vector<double> net_util;
@@ -52,10 +52,10 @@ int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 int shortest_edge_path[MAXN][MAXN];
 long bw[MAXN][MAXN];
 int max_time;
-std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
+std::map<std::pair<int, int>, std::unique_ptr<std::vector<int>>> path_cache;
 solution_statistics stats;
-std::vector<std::unique_ptr<std::vector<int> > > all_results;
-std::vector<std::vector<int> > results;
+std::vector<std::unique_ptr<std::vector<int>>> all_results;
+std::vector<std::vector<int>> results;
 std::vector<std::vector<int>> paths;
 middlebox fake_mbox("switch", "0", "0", TOSTRING(INF), "0.0");
 
@@ -103,30 +103,35 @@ int main(int argc, char *argv[]) {
     // GetEdgeCount(graph));
 
     for (int i = 0; i < traffic_requests.size();) {
-//      traffic_requests[i].duration = 6000; // 300;
+      //      traffic_requests[i].duration = 6000; // 300;
 
       fprintf(cost_log_file, "%d ", current_time);
       fprintf(util_log_file, "%d ", current_time);
 
-      for (; i < traffic_requests.size() && current_time == traffic_requests[i].arrival_time; ++i) {
-//        traffic_requests[i].duration = 6000; // 300;
+      for (; i < traffic_requests.size() &&
+                 current_time == traffic_requests[i].arrival_time;
+           ++i) {
+        //        traffic_requests[i].duration = 6000; // 300;
         current_traffic_requests.push_back(traffic_requests[i]);
       }
       current_time = traffic_requests[i].arrival_time;
 
       std::vector<int> sequence[current_traffic_requests.size()];
-      std::vector<std::vector<std::pair <int, int> >> edges(current_traffic_requests.size());
-      std::vector<std::vector<std::pair <int, int> >> all_edges(current_traffic_requests.size());
+      std::vector<std::vector<std::pair<int, int>>> edges(
+          current_traffic_requests.size());
+      std::vector<std::vector<std::pair<int, int>>> all_edges(
+          current_traffic_requests.size());
       int delays[current_traffic_requests.size()];
       std::vector<double> opex_breakdown;
       std::vector<int> utilization;
 
-      run_cplex(current_traffic_requests, opex, opex_breakdown, 
-                running_time, sequence, edges, all_edges, delays, utilization, topology_filename);
-      
+      run_cplex(current_traffic_requests, opex, opex_breakdown, running_time,
+                sequence, edges, all_edges, delays, utilization,
+                topology_filename);
+
       processed_traffic += current_traffic_requests.size();
 
-      //cout << processed_traffic * 100.0 / traffic_requests.size()
+      // cout << processed_traffic * 100.0 / traffic_requests.size()
       //     << "% Traffic processed." << endl;
 
       // cost log
@@ -140,7 +145,7 @@ int main(int argc, char *argv[]) {
       for (int ii = 0; ii < current_traffic_requests.size(); ++ii) {
         // sequence
         std::vector<int> seq = sequence[ii];
-        /*        
+        /*
         for (int s : seq) {
           cout << s << " ";
         }
@@ -155,8 +160,8 @@ int main(int argc, char *argv[]) {
         fprintf(sequence_log_file, "\n");
 
         // path
-        std::vector<std::pair <int, int> > edge_list = edges[ii];
-        std::vector<std::pair <int, int> > all_edge_list = all_edges[ii];
+        std::vector<std::pair<int, int>> edge_list = edges[ii];
+        std::vector<std::pair<int, int>> all_edge_list = all_edges[ii];
         /*
         for (std::pair<int, int> edge: edge_list) {
           cout << "(" << edge.first << ", " << edge.second << ") ";
@@ -168,7 +173,7 @@ int main(int argc, char *argv[]) {
         cout << endl;
         */
         DEBUG("Computing path for traffic %d\n", ii);
-        for (auto& edge : edges[ii]) {
+        for (auto &edge : edges[ii]) {
           DEBUG("(%d, %d)\n", edge.first, edge.second);
         }
         DEBUG("input sent\n");
@@ -184,7 +189,8 @@ int main(int argc, char *argv[]) {
 
       /*
       //path log
-      for (int t = 0, current, remove_index; t < current_traffic_requests.size(); ++t) {
+      for (int t = 0, current, remove_index; t <
+      current_traffic_requests.size(); ++t) {
         cout << "processing traffic " << t << endl;
         traffic_request tr = current_traffic_requests[t];
         current = tr.source;
@@ -227,9 +233,9 @@ int main(int argc, char *argv[]) {
       fprintf(util_log_file, "\n");
 
       fflush(cost_log_file);
-      fflush(sequence_log_file);  
+      fflush(sequence_log_file);
       fflush(path_log_file);
-      fflush(util_log_file);    
+      fflush(util_log_file);
 
       current_traffic_requests.clear();
       // exit(0);
@@ -251,8 +257,9 @@ int main(int argc, char *argv[]) {
       // traffic_requests[i].duration = 6300; // 300;
       if (current_time != traffic_requests[i].arrival_time) {
         // RefreshServerStats(current_time);
-        printf("Current time = %d, Solution time = %llu.%llu\n", 
-            current_time, current_solution_time / ONE_GIG, current_solution_time % ONE_GIG);
+        printf("Current time = %d, Solution time = %llu.%llu\n", current_time,
+               current_solution_time / ONE_GIG,
+               current_solution_time % ONE_GIG);
         current_time = traffic_requests[i].arrival_time;
         current_solution_time = 0;
         ReleaseAllResources();
@@ -260,17 +267,18 @@ int main(int argc, char *argv[]) {
 
       // Get solution for one traffic.
       auto solution_start_time = std::chrono::high_resolution_clock::now();
-      std::unique_ptr<std::vector<int> > result =
+      std::unique_ptr<std::vector<int>> result =
           ViterbiCompute(traffic_requests[i]);
       auto solution_end_time = std::chrono::high_resolution_clock::now();
-      unsigned long long solution_time = 
-        std::chrono::duration_cast<std::chrono::nanoseconds>(
-            solution_end_time - solution_start_time).count();
+      unsigned long long solution_time =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              solution_end_time - solution_start_time).count();
       current_solution_time += solution_time;
       elapsed_time += solution_time;
       UpdateResources(result.get(), traffic_requests[i]);
       RefreshServerStats(current_time);
-      // printf("i = %d, %s\n", i, traffic_requests[i].GetDebugString().c_str());
+      // printf("i = %d, %s\n", i,
+      // traffic_requests[i].GetDebugString().c_str());
       // Progress bar
       if (i % 500 == 0) {
         double percentage_completed = 100.0 * static_cast<double>(i) /
@@ -280,9 +288,8 @@ int main(int argc, char *argv[]) {
       all_results.push_back(std::move(result));
     }
 
-    printf("Current time = %d, Solution time = %llu.%llu\n", 
-          current_time, current_solution_time / ONE_GIG, 
-          current_solution_time % ONE_GIG);
+    printf("Current time = %d, Solution time = %llu.%llu\n", current_time,
+           current_solution_time / ONE_GIG, current_solution_time % ONE_GIG);
     // Print the solution time.
     printf("Solution time: %llu.%llus\n", elapsed_time / ONE_GIG,
            elapsed_time % ONE_GIG);
@@ -295,8 +302,7 @@ int main(int argc, char *argv[]) {
     int row_index = 0;
     for (auto &row : all_results) {
       for (int i = 0; i < row->size(); ++i) {
-        if (i != 0)
-          fprintf(all_results_file, ",");
+        if (i != 0) fprintf(all_results_file, ",");
         fprintf(all_results_file, "%d", row->at(i));
       }
       fprintf(all_results_file, "\n");

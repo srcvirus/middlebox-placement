@@ -8,15 +8,15 @@
 std::vector<middlebox> middleboxes;
 std::vector<traffic_request> traffic_requests;
 std::vector<node> nodes;
-std::vector<std::vector<edge_endpoint> > graph;
+std::vector<std::vector<edge_endpoint>> graph;
 std::vector<double> closeness;
-std::vector<std::vector<middlebox_instance> > deployed_mboxes;
+std::vector<std::vector<middlebox_instance>> deployed_mboxes;
 std::vector<double> deployment_costs, energy_costs, transit_costs, sla_costs,
-total_costs, stretches;
+    total_costs, stretches;
 std::vector<double> e_cost_ts;
 std::vector<std::vector<int>> ingress_k, egress_k;
-std::vector<std::pair<int,int>> num_active_servers;
-std::vector<std::vector<double>> sol_closeness; 
+std::vector<std::pair<int, int>> num_active_servers;
+std::vector<std::vector<double>> sol_closeness;
 std::list<int> mbox_count;
 std::vector<int> num_service_points;
 std::vector<double> net_util;
@@ -27,10 +27,10 @@ int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 int shortest_edge_path[MAXN][MAXN];
 long bw[MAXN][MAXN];
 int max_time;
-std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > > path_cache;
+std::map<std::pair<int, int>, std::unique_ptr<std::vector<int>>> path_cache;
 solution_statistics stats;
-std::vector<std::unique_ptr<std::vector<int> > > all_results;
-std::vector<std::vector<int> > results;
+std::vector<std::unique_ptr<std::vector<int>>> all_results;
+std::vector<std::vector<int>> results;
 std::vector<std::vector<int>> paths;
 middlebox fake_mbox("switch", "0", "0", TOSTRING(INF), "0.0");
 
@@ -51,17 +51,15 @@ int main(int argc, char *argv[]) {
       InitializeAllResults(argument.second.c_str());
     } else if (argument.first == "--max_time") {
       max_time = atoi(argument.second.c_str());
-    }
-    else if (argument.first == "--log_file_prefix") {
+    } else if (argument.first == "--log_file_prefix") {
       log_file_prefix = argument.second;
-    }
-    else if (argument.first == "--cplex_solution_path_file") {
+    } else if (argument.first == "--cplex_solution_path_file") {
       InitializeSolutionPaths(argument.second.c_str());
       processing_cplex = true;
     }
   }
   for (int i = 0; i < traffic_requests.size(); ++i) {
-//    traffic_requests[i].duration = 6000;
+    //    traffic_requests[i].duration = 6000;
   }
   ComputeSolutionCosts(results);
   ComputeServicePoints(results);
@@ -73,7 +71,7 @@ int main(int argc, char *argv[]) {
   } else {
     CplexComputeAllStretches(paths);
     CplexComputeNetworkUtilization(paths);
-    CplexComputeKHops(results,paths);
+    CplexComputeKHops(results, paths);
   }
   ProcessCostLogs(log_file_prefix);
   ProcessStretchLogs(log_file_prefix);
@@ -86,4 +84,3 @@ int main(int argc, char *argv[]) {
   ProcessActiveServerLogs(log_file_prefix);
   return 0;
 }
-

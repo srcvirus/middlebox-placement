@@ -62,7 +62,7 @@ void InitializeAllResults(const char *filename) {
   for (int i = 0; i < csv_vector->size(); ++i) {
     std::vector<std::string> &row = (*csv_vector)[i];
     std::vector<int> current_result;
-    for (auto& element : row) {
+    for (auto &element : row) {
       current_result.push_back(atoi(element.c_str()));
       DEBUG("Pushing %s\n", element.c_str());
     }
@@ -71,13 +71,13 @@ void InitializeAllResults(const char *filename) {
   }
 }
 
-void InitializeSolutionPaths(const char* filename) {
+void InitializeSolutionPaths(const char *filename) {
   paths.clear();
   auto csv_vector = ReadCSVFile(filename);
   for (int i = 0; i < csv_vector->size(); ++i) {
-    std::vector<std::string>& row = (*csv_vector)[i];
+    std::vector<std::string> &row = (*csv_vector)[i];
     std::vector<int> current_path;
-    for (auto& element : row) {
+    for (auto &element : row) {
       current_path.push_back(atoi(element.c_str()));
     }
     paths.push_back(current_path);
@@ -128,8 +128,8 @@ void InitializeTrafficRequests(const char *filename) {
       last_time_stamp = current_time;
       current_time = traffic_requests[i].arrival_time;
     }
-    traffic_requests[i].duration = (last_time_stamp -
-    traffic_requests[i].arrival_time) * 60;
+    traffic_requests[i].duration =
+        (last_time_stamp - traffic_requests[i].arrival_time) * 60;
   }
 }
 
@@ -158,7 +158,7 @@ void InitializeTopology(const char *filename) {
     }
   }
   DEBUG("nodes.size() = %u\n", nodes.size());
-  for (auto& n : nodes) {
+  for (auto &n : nodes) {
     DEBUG("%s\n", n.GetDebugString().c_str());
   }
 

@@ -15,23 +15,23 @@
 #define NIL -1
 #define EPS 1e-9
 
-#define NUM_CORES_PER_SERVER 160 
+#define NUM_CORES_PER_SERVER 160
 // #define SERVER_IDLE_ENERGY 0.0   // Kilo Watt
 // #define SERVER_PEAK_ENERGY 0.135 // Kilo Watt
-#define SERVER_IDLE_ENERGY 0.0805   // Kilo Watt
-#define SERVER_PEAK_ENERGY 2.735 // Kilo Watt
-#define POWER_CONSUMPTION_ONE_SERVER(cores)                                    \
-  (SERVER_IDLE_ENERGY +                                                        \
-   (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) *                                 \
+#define SERVER_IDLE_ENERGY 0.0805  // Kilo Watt
+#define SERVER_PEAK_ENERGY 2.735   // Kilo Watt
+#define POWER_CONSUMPTION_ONE_SERVER(cores)    \
+  (SERVER_IDLE_ENERGY +                        \
+   (SERVER_PEAK_ENERGY - SERVER_IDLE_ENERGY) * \
        ((1.0 * (cores)) / (1.0 * (NUM_CORES_PER_SERVER))))
 #define PER_UNIT_ENERGY_PRICE 0.10
 #define HW_MBOX_IDLE_ENERGY 1.1
 #define HW_MBOX_PEAK_ENERGY 1.7
 //#define HW_MBOX_TRAFFIC_CAPACITY 1000 // 1000Mbps
-#define HW_MBOX_TRAFFIC_CAPACITY 50000 // 50Gbps
-#define HW_MBOX_POWER_CONSUMPTION(traffic)                                     \
-  (HW_MBOX_IDLE_ENERGY +                                                       \
-   (HW_MBOX_PEAK_ENERGY - HW_MBOX_IDLE_ENERGY) *                               \
+#define HW_MBOX_TRAFFIC_CAPACITY 50000  // 50Gbps
+#define HW_MBOX_POWER_CONSUMPTION(traffic)       \
+  (HW_MBOX_IDLE_ENERGY +                         \
+   (HW_MBOX_PEAK_ENERGY - HW_MBOX_IDLE_ENERGY) * \
        ((1.0 * traffic) / (1.0 * (HW_MBOX_TRAFFIC_CAPACITY))))
 
 struct middlebox {
@@ -39,11 +39,12 @@ struct middlebox {
   int cpu_requirement;
   int processing_delay;
   int processing_capacity;
-  double deployment_cost; // Hourly cost of running a middlebox.
+  double deployment_cost;  // Hourly cost of running a middlebox.
   middlebox(const std::string &mb_name, const std::string &mb_cpu,
             const std::string &mb_delay, const std::string &mb_capacity,
             const std::string &mb_cost)
-      : middlebox_name(mb_name), cpu_requirement(atoi(mb_cpu.c_str())),
+      : middlebox_name(mb_name),
+        cpu_requirement(atoi(mb_cpu.c_str())),
         processing_delay(atoi(mb_delay.c_str())),
         processing_capacity(atoi(mb_capacity.c_str())),
         deployment_cost(atof(mb_cost.c_str())) {}
@@ -87,7 +88,8 @@ struct traffic_request {
                   const std::string &tr_delay_penalty,
                   const std::vector<int> &tr_mbox_seq)
       : arrival_time(atoi(tr_arrival_time.c_str())),
-        source(atoi(tr_source.c_str())), destination(atoi(tr_dest.c_str())),
+        source(atoi(tr_source.c_str())),
+        destination(atoi(tr_dest.c_str())),
         min_bandwidth(atoi(tr_min_bandwidth.c_str())),
         max_delay(atoi(tr_max_delay.c_str())),
         delay_penalty(atof(tr_delay_penalty.c_str())),
@@ -97,12 +99,11 @@ struct traffic_request {
     for (auto value : middlebox_sequence) {
       seq_string += std::to_string(value) + " ";
     }
-    return "arrival_time = " + std::to_string(arrival_time) +
-           ", duration = " + std::to_string(duration) +
-           ", source : " + std::to_string(source) + ", destination : " +
-           std::to_string(destination) + ", min_bandwidth : " +
-           std::to_string(min_bandwidth) + ", max_delay : " +
-           std::to_string(max_delay) + ", delay_penalty : " +
+    return "arrival_time = " + std::to_string(arrival_time) + ", duration = " +
+           std::to_string(duration) + ", source : " + std::to_string(source) +
+           ", destination : " + std::to_string(destination) +
+           ", min_bandwidth : " + std::to_string(min_bandwidth) +
+           ", max_delay : " + std::to_string(max_delay) + ", delay_penalty : " +
            std::to_string(delay_penalty) + ", middlebox_sequence_length : " +
            std::to_string(middlebox_sequence.size()) +
            ", middlebox_sequence: " + seq_string;
@@ -170,11 +171,11 @@ struct solution_statistics {
   std::vector<server_statistics> server_stats;
 };
 
-inline int GetNodeCount(const std::vector<std::vector<edge_endpoint> > &g) {
+inline int GetNodeCount(const std::vector<std::vector<edge_endpoint>> &g) {
   return g.size();
 }
 
-inline int GetEdgeCount(const std::vector<std::vector<edge_endpoint> > &g) {
+inline int GetEdgeCount(const std::vector<std::vector<edge_endpoint>> &g) {
   int edge_count = 0;
   for (int i = 0; i < g.size(); ++i) {
     edge_count += g[i].size();
@@ -187,19 +188,19 @@ inline int GetEdgeCount(const std::vector<std::vector<edge_endpoint> > &g) {
 extern std::vector<middlebox> middleboxes;
 extern std::vector<traffic_request> traffic_requests;
 extern std::vector<node> nodes;
-extern std::vector<std::vector<edge_endpoint> > graph;
+extern std::vector<std::vector<edge_endpoint>> graph;
 extern std::vector<double> closeness;
-extern std::vector<std::vector<middlebox_instance> > deployed_mboxes;
+extern std::vector<std::vector<middlebox_instance>> deployed_mboxes;
 extern std::list<int> mbox_count;
-extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int> > >
+extern std::map<std::pair<int, int>, std::unique_ptr<std::vector<int>>>
     path_cache;
 extern std::vector<double> deployment_costs, energy_costs, transit_costs,
     sla_costs, total_costs, stretches;
 extern std::vector<double> e_cost_ts;
-extern std::vector<std::vector<int> > ingress_k;
-extern std::vector<std::vector<int> > egress_k;
-extern std::vector<std::pair<int,int>> num_active_servers;
-extern std::vector<std::vector<double> > sol_closeness;
+extern std::vector<std::vector<int>> ingress_k;
+extern std::vector<std::vector<int>> egress_k;
+extern std::vector<std::pair<int, int>> num_active_servers;
+extern std::vector<std::vector<double>> sol_closeness;
 extern std::vector<int> num_service_points;
 extern std::vector<double> net_util;
 extern solution_statistics stats;
@@ -211,6 +212,6 @@ extern int shortest_edge_path[MAXN][MAXN];
 extern long bw[MAXN][MAXN];
 extern int max_time;
 extern middlebox fake_mbox;
-extern std::vector<std::vector<int> > results;
-extern std::vector<std::vector<int> > paths;
-#endif // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
+extern std::vector<std::vector<int>> results;
+extern std::vector<std::vector<int>> paths;
+#endif  // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_

@@ -50,13 +50,13 @@ std::unique_ptr<std::vector<int> > ViterbiCompute(
         if (IsResourceAvailable(prev_node, current_node,
                                 previous_vector[prev_node], m_box, t_request)) {
           double transition_cost =
-              cost[stage - 1][prev_node] +
-              GetCost(prev_node, current_node, previous_vector[prev_node],
-                      m_box, t_request);
-          DEBUG("[stage = %d, middlebox = %s, prev_node = %d, tr_cost = "
-                "%lf]\n",
-                stage, m_box.middlebox_name.c_str(), prev_node,
-                transition_cost);
+              cost[stage - 1][prev_node] + GetCost(prev_node, current_node,
+                                                   previous_vector[prev_node],
+                                                   m_box, t_request);
+          DEBUG(
+              "[stage = %d, middlebox = %s, prev_node = %d, tr_cost = "
+              "%lf]\n",
+              stage, m_box.middlebox_name.c_str(), prev_node, transition_cost);
           if (cost[stage][current_node] > transition_cost) {
             cost[stage][current_node] = transition_cost;
             pre[stage][current_node] = prev_node;

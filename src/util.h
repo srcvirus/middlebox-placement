@@ -39,15 +39,16 @@ inline unsigned long CurrentTimeNanos() {
          static_cast<unsigned long>(ts.tv_nsec);
 }
 
-template <class T> double GetMean(const std::vector<T> &data) {
+template <class T>
+double GetMean(const std::vector<T> &data) {
   T sum = T(0);
   const size_t kNumElements = data.size();
-  for (auto &element : data)
-    sum += element;
+  for (auto &element : data) sum += element;
   return sum / static_cast<T>(kNumElements);
 }
 
-template <class T> T GetNthPercentile(const std::vector<T> &data, int n) {
+template <class T>
+T GetNthPercentile(const std::vector<T> &data, int n) {
   std::vector<T> temp_data_buffer = data;
   sort(temp_data_buffer.begin(), temp_data_buffer.end());
   const size_t kNumElements = data.size();
@@ -145,17 +146,16 @@ inline void ReduceEdgeResidualBandwidth(int source, int destination,
 }
 
 void DecommissionAllMiddleboxes() {
-  for (auto &mboxes : deployed_mboxes)
-    mboxes.clear();
+  for (auto &mboxes : deployed_mboxes) mboxes.clear();
 }
 
 void ReleaseBandwidth() {
   for (int i = 0; i < graph.size(); ++i) {
-    auto& adj_list = graph[i];
+    auto &adj_list = graph[i];
     for (auto &endpoint : adj_list) {
       endpoint.residual_bandwidth = endpoint.bandwidth;
-      bw[i][endpoint.u->node_id] = 
-        bw[endpoint.u->node_id][i] = endpoint.bandwidth;
+      bw[i][endpoint.u->node_id] = bw[endpoint.u->node_id][i] =
+          endpoint.bandwidth;
     }
   }
 }
@@ -196,6 +196,9 @@ inline void ReduceNodeCapacity(int node, const middlebox &m_box) {
 int UsedMiddleboxIndex(int current_node, const middlebox &m_box,
                        const traffic_request &t_request) {
   for (int i = 0; i < deployed_mboxes[current_node].size(); ++i) {
+    DEBUG("deployed_mboxes[current_node][i].m_box->middlebox_name = %s\n",
+          deployed_mboxes[current_node][i].m_box->middlebox_name.c_str());
+    DEBUG("m_box.middlebox_name = %s\n", m_box.middlebox_name.c_str());
     if (deployed_mboxes[current_node][i].m_box->middlebox_name ==
         m_box.middlebox_name) {
       if (deployed_mboxes[current_node][i].residual_capacity >=
@@ -230,6 +233,7 @@ void UpdateResources(const std::vector<int> *traffic_sequence,
   }
   for (int i = 1; i < static_cast<int>(traffic_sequence->size()) - 1; ++i) {
     const middlebox &m_box = middleboxes[t_request.middlebox_sequence[i - 1]];
+    DEBUG("i = %d, updating %s\n", i, m_box.middlebox_name.c_str());
     UpdateMiddleboxInstances(traffic_sequence->at(i),
                              &middleboxes[t_request.middlebox_sequence[i - 1]],
                              t_request);
@@ -287,8 +291,7 @@ double GetSLAViolationCost(int source, int destination, double max_delay,
 inline double GetTransitCost(int prev_node, int current_node,
                              const traffic_request &t_request) {
   int path_length = shortest_edge_path[prev_node][current_node];
-  if (path_length >= INF)
-    return INF;
+  if (path_length >= INF) return INF;
   return (1.0 / 1000.0) * path_length * per_bit_transit_cost *
          t_request.min_bandwidth * t_request.duration;
 }
@@ -344,16 +347,16 @@ double GetCost(int prev_node, int current_node, const resource &resource_vector,
       GetTransitCost(current_node, t_request.destination, t_request);
   double sla_violation_cost =
       GetSLAViolationCost(prev_node, current_node, t_request, m_box);
-  DEBUG("dep_cost = %lf, en_cost = %lf, tr_cost = %lf,"
-        "sla_cost = %lf\n",
-        deployment_cost, energy_cost, transit_cost, sla_violation_cost);
+  DEBUG(
+      "dep_cost = %lf, en_cost = %lf, tr_cost = %lf,"
+      "sla_cost = %lf\n",
+      deployment_cost, energy_cost, transit_cost, sla_violation_cost);
   return deployment_cost + energy_cost + transit_cost + sla_violation_cost;
 }
 
 inline int GetLatency(int source, int destination) {
   for (edge_endpoint endpoint : graph[source]) {
-    if (endpoint.u->node_id == destination)
-      return endpoint.delay;
+    if (endpoint.u->node_id == destination) return endpoint.delay;
   }
   return NIL;
 }
@@ -389,14 +392,12 @@ void ComputeSolutionCosts(const std::vector<std::vector<int> > &solutions) {
       double e_cost = 0.0;
       int active_servers = 0;
       for (auto &n : nodes) {
-        if (n.num_cores <= 0)
-          continue;
+        if (n.num_cores <= 0) continue;
         int used_cores = n.num_cores - n.residual_cores;
-        if (used_cores > 0)
-          ++active_servers;
-        e_cost +=
-            POWER_CONSUMPTION_ONE_SERVER(used_cores) *
-            (traffic_requests[i - 1].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;
+        if (used_cores > 0) ++active_servers;
+        e_cost += POWER_CONSUMPTION_ONE_SERVER(used_cores) *
+                  (traffic_requests[i - 1].duration / 3600.0) *
+                  PER_UNIT_ENERGY_PRICE;
         printf(
             "ts = %d, Used cores = %d, energy consumed = %lf, duratio = %d\n",
             current_time, used_cores, POWER_CONSUMPTION_ONE_SERVER(used_cores),
@@ -466,6 +467,7 @@ void ComputeSolutionCosts(const std::vector<std::vector<int> > &solutions) {
     transit_costs.push_back(t_cost);
     sla_costs.push_back(sla_cost);
     total_costs.push_back(d_cost + e_cost + t_cost + sla_cost);
+    DEBUG("current traffic request = %d\n", i);
     UpdateResources(&current_solution, traffic_requests[i]);
     RefreshServerStats(current_time);
   }
@@ -474,11 +476,9 @@ void ComputeSolutionCosts(const std::vector<std::vector<int> > &solutions) {
   int K = traffic_requests.size() - 1;
   int active_servers = 0;
   for (auto &n : nodes) {
-    if (n.num_cores <= 0)
-      continue;
+    if (n.num_cores <= 0) continue;
     int used_cores = n.num_cores - n.residual_cores;
-    if (used_cores > 0)
-      ++active_servers;
+    if (used_cores > 0) ++active_servers;
     er_cost += POWER_CONSUMPTION_ONE_SERVER(used_cores) *
                (traffic_requests[K].duration / 3600.0) * PER_UNIT_ENERGY_PRICE;
     printf("ts = %d, Used cores = %d, energy consumed = %lf, duration = %d\n",
@@ -530,8 +530,8 @@ void ComputeAllStretches(const std::vector<std::vector<int> > &solutions) {
   }
 }
 
-void
-CplexComputeAllStretches(const std::vector<std::vector<int> > &solution_paths) {
+void CplexComputeAllStretches(
+    const std::vector<std::vector<int> > &solution_paths) {
   for (auto &path : solution_paths) {
     int embedded_path_length = path.size() - 1;
     int source = path[0];
@@ -544,8 +544,8 @@ CplexComputeAllStretches(const std::vector<std::vector<int> > &solution_paths) {
   }
 }
 
-void
-ComputeNetworkUtilization(const std::vector<std::vector<int> > &solutions) {
+void ComputeNetworkUtilization(
+    const std::vector<std::vector<int> > &solutions) {
   const unsigned long kNetworkCapacity = GetTotalNetworkBandwidth();
   for (int i = 0; i < traffic_requests.size(); ++i) {
     unsigned long bandwidth_usage =
@@ -609,8 +609,7 @@ void CplexComputeKHops(const std::vector<std::vector<int> > &solutions,
     int kk = 0;
     for (int j = 1; j < solutions[i].size() - 1; ++j) {
       for (; kk < solution_paths[i].size() - 1; ++kk) {
-        if (solution_paths[i][kk] == solutions[i][j])
-          break;
+        if (solution_paths[i][kk] == solutions[i][j]) break;
       }
       ihops = kk;
       ehops = solution_paths[i].size() - kk - 1;
@@ -683,10 +682,8 @@ void ProcessKHopsLogs(const std::string &output_file_prefix) {
   FILE *ingress_k_file = fopen(kIngressKHopsFileName.c_str(), "w");
   FILE *egress_k_file = fopen(kEgressKHopsFileName.c_str(), "w");
   for (int i = 0; i < traffic_requests.size(); ++i) {
-    for (auto &elem : ingress_k[i])
-      ihops.push_back(elem);
-    for (auto &elem : egress_k[i])
-      ehops.push_back(elem);
+    for (auto &elem : ingress_k[i]) ihops.push_back(elem);
+    for (auto &elem : egress_k[i]) ehops.push_back(elem);
   }
   std::vector<std::pair<int, double> > ingress_k_cdf = GetCDF(ihops);
   std::vector<std::pair<int, double> > egress_k_cdf = GetCDF(ehops);
@@ -795,15 +792,14 @@ void ProcessStretchLogs(const std::string &output_file_prefix) {
     fprintf(stretch_file, "%lf %lf\n", cdf[i].first, cdf[i].second);
   }
   fclose(stretch_file);
-  const std::string kStretchSummaryFileName = output_file_prefix + 
-                                                ".stretch.summary";
-  FILE* stretch_summary_file = fopen(kStretchSummaryFileName.c_str(),
-                                      "w");
+  const std::string kStretchSummaryFileName =
+      output_file_prefix + ".stretch.summary";
+  FILE *stretch_summary_file = fopen(kStretchSummaryFileName.c_str(), "w");
   double mean_stretch = GetMean(stretches);
   double first_percentile_stretch = GetNthPercentile(stretches, 1);
   double ninety_ninth_percentile_stretch = GetNthPercentile(stretches, 99);
   fprintf(stretch_summary_file, "%lf %lf %lf\n", mean_stretch,
-    first_percentile_stretch, ninety_ninth_percentile_stretch);
+          first_percentile_stretch, ninety_ninth_percentile_stretch);
   fclose(stretch_summary_file);
 }
 
@@ -899,9 +895,9 @@ void ProcessClosenessLogs(const std::string &output_file_prefix) {
   fclose(closeness_log);
 }
 
-std::vector<int>
-CplexComputePath(const std::vector<std::pair<int, int> > &edges,
-                 const std::vector<int> sequence) {
+std::vector<int> CplexComputePath(
+    const std::vector<std::pair<int, int> > &edges,
+    const std::vector<int> sequence) {
   int source = sequence.front();
   int destination = sequence.back();
   std::vector<std::vector<int> > adj;
@@ -946,4 +942,4 @@ CplexComputePath(const std::vector<std::pair<int, int> > &edges,
   return path;
 }
 
-#endif // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
+#endif  // MIDDLEBOX_PLACEMENT_SRC_UTIL_H_
