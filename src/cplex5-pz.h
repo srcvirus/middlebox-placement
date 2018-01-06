@@ -154,7 +154,7 @@ void run_cplex_opt(std::vector<traffic_request> traffic_requests, double &opex,
     FILE *topology_file = fopen(topology_filename.c_str(), "r");
 
     // read switch and link count
-    fscanf(topology_file, "%d %d", &kSwitchCount, &kLinkCount);
+    int ret_val = fscanf(topology_file, "%d %d", &kSwitchCount, &kLinkCount);
     // ingress and egress middleboxes are deployed on special non-existent
     // servers
     // kServerCount += kSwitchCount;  // these are the special ones
@@ -227,7 +227,7 @@ void run_cplex_opt(std::vector<traffic_request> traffic_requests, double &opex,
 
     // read the switch info from file
     for (int i = 0, sw, cpu; i < kSwitchCount; ++i) {
-      fscanf(topology_file, "%d %d", &sw, &cpu);
+      int ret_val = fscanf(topology_file, "%d %d", &sw, &cpu);
       //_z_s_n[sw][sw] = 1;  // for the special ones
       //_z_s_n[sw][sw + kSwitchCount] = 1;  // these is where we deploy normal
       //middleboxes
@@ -281,9 +281,9 @@ void run_cplex_opt(std::vector<traffic_request> traffic_requests, double &opex,
     bandwidth b;
     for (int _l = 0, _u, _v, d; _l < kLinkCount; ++_l) {
 #ifdef LONGBAND
-      fscanf(topology_file, "%d %d %ld %d", &_u, &_v, &b, &d);
+      int ret_val = fscanf(topology_file, "%d %d %ld %d", &_u, &_v, &b, &d);
 #else
-      fscanf(topology_file, "%d %d %d %d", &_u, &_v, &b, &d);
+      int ret_val = fscanf(topology_file, "%d %d %d %d", &_u, &_v, &b, &d);
 #endif
       _beta[_u][_v] = b;
       _beta[_v][_u] = b;

@@ -137,13 +137,13 @@ void InitializeTopology(const char *filename) {
   DEBUG("[Parsing %s]\n", filename);
   FILE *file_ptr = fopen(filename, "r");
   int node_count, edge_count;
-  fscanf(file_ptr, "%d %d", &node_count, &edge_count);
+  int ret_val = fscanf(file_ptr, "%d %d", &node_count, &edge_count);
   DEBUG(" node_count = %d, edge_count = %d\n", node_count, edge_count);
   graph.resize(node_count);
   nodes.resize(node_count);
   deployed_mboxes.resize(node_count);
   for (int i = 0; i < node_count; ++i) {
-    fscanf(file_ptr, "%d %d", &nodes[i].node_id, &nodes[i].num_cores);
+    ret_val = fscanf(file_ptr, "%d %d", &nodes[i].node_id, &nodes[i].num_cores);
     nodes[i].residual_cores = nodes[i].num_cores;
     graph[i].clear();
     shortest_path[i][i] = 0.0;
@@ -165,7 +165,7 @@ void InitializeTopology(const char *filename) {
   for (int j = 0; j < edge_count; ++j) {
     int source, destination, delay;
     unsigned long bandwidth;
-    fscanf(file_ptr, "%d %d %lu %d", &source, &destination, &bandwidth, &delay);
+    ret_val = fscanf(file_ptr, "%d %d %lu %d", &source, &destination, &bandwidth, &delay);
     DEBUG(" Read edge: %d %d %lu %d\n", source, destination, bandwidth, delay);
     DEBUG(" Adding edge, %d --> %s\n", source,
           nodes[destination].GetDebugString().c_str());
