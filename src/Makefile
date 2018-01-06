@@ -1,6 +1,6 @@
-LIB_PATHS = -L$(CPLEX_HOME)/cplex/lib/x86-64_sles10_4.1/static_pic -L$(CPLEX_HOME)/concert/lib/x86-64_sles10_4.1/static_pic
+LIB_PATHS = -L$(CPLEX_ROOT)/cplex/lib/x86-64_sles10_4.1/static_pic -L$(CPLEX_ROOT)/concert/lib/x86-64_sles10_4.1/static_pic
 
-INCLUDE_PATHS = -I$(CPLEX_HOME)/cplex/include -I$(CPLEX_HOME)/concert/include
+INCLUDE_PATHS = -I$(CPLEX_ROOT)/cplex/include -I$(CPLEX_ROOT)/concert/include
 LIBS = -lilocplex -lconcert -lcplex -lm -lpthread
 DFLAGS = -DIL_STD -DCPLEX_PZ
 FILES = middleman.cc
