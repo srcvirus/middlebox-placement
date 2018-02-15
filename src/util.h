@@ -251,17 +251,28 @@ inline int IsResourceAvailable(int prev_node, int current_node,
       GetPathResidualBandwidth(prev_node, current_node),
       t_request.min_bandwidth, resource_vector.cpu_cores[current_node],
       m_box.cpu_requirement);
-  if ((GetPathResidualBandwidth(prev_node, current_node) >=
-       t_request.min_bandwidth)) {
+  auto res_bandwidth = GetPathResidualBandwidth(prev_node, current_node);
+  if (res_bandwidth >= t_request.min_bandwidth) {
     // Check if we can use existing middlebox of the same type.
-    if (UsedMiddleboxIndex(current_node, m_box, t_request) != NIL) {
-      return 1;
-    }
+    // For comparison with khaleesi we do not share middleboxes between traffic
+    // requests.
+    // if (UsedMiddleboxIndex(current_node, m_box, t_request) != NIL) {
+    //   return 1;
+    // }
     // If we cannot use existing ones, then we need to instantiate new one.
-    if (m_box.processing_capacity >= t_request.min_bandwidth &&
-        resource_vector.cpu_cores[current_node] >= m_box.cpu_requirement) {
-      return 1;
+    // For comparison with Khaleesi we do not care about middlebox processing
+    // capacity. Therefore, checking only residual number of cores.
+    if (resource_vector.cpu_cores[current_node] >= m_box.cpu_requirement) {
+      if (res_bandwidth == 100000000000000L) {
+        if (resource_vector.sw_cap[current_node] >= t_request.min_bandwidth) {
+          return 1;
+        }
+      } else return 1;
     }
+    // if (m_box.processing_capacity >= t_request.min_bandwidth &&
+    //     resource_vector.cpu_cores[current_node] >= m_box.cpu_requirement) {
+    //   return 1;
+    // }
   }
   return 0;
 }
@@ -269,6 +280,7 @@ inline int IsResourceAvailable(int prev_node, int current_node,
 inline double GetSLAViolationCost(int prev_node, int current_node,
                                   const traffic_request &t_request,
                                   const middlebox &m_box) {
+  return 0.0;
   const int kNumSegments = t_request.middlebox_sequence.size() + 1;
   const double kPerSegmentLatencyBound =
       (1.0 * t_request.max_delay) / kNumSegments;
@@ -292,8 +304,9 @@ inline double GetTransitCost(int prev_node, int current_node,
                              const traffic_request &t_request) {
   int path_length = shortest_edge_path[prev_node][current_node];
   if (path_length >= INF) return INF;
-  return (1.0 / 1000.0) * path_length * per_bit_transit_cost *
-         t_request.min_bandwidth * t_request.duration;
+  return path_length;
+  // return (1.0 / 1000.0) * path_length * per_bit_transit_cost *
+  //        t_request.min_bandwidth * t_request.duration;
 }
 
 double GetServerEnergyConsumption(int num_cores_used) {
@@ -325,6 +338,8 @@ inline double GetEnergyCost(int current_node, const middlebox &m_box,
     energy_cost += (GetServerEnergyConsumption(0) * duration_hours *
                     PER_UNIT_ENERGY_PRICE);
   }
+  // For comparison with Khaleesi energy cost is not considered.
+  energy_cost = 0.0;
   return energy_cost;
 }
 
@@ -493,6 +508,22 @@ void ComputeSolutionCosts(const std::vector<std::vector<int> > &solutions) {
     n_deployed += deployed_mboxes[j].size();
   mbox_count.push_back(n_deployed);
   ReleaseAllResources();
+}
+
+typedef std::pair<int, int> edge_t;
+typedef std::vector<edge_t> path_t;
+
+std::unique_ptr<path_t> ComputeEmbeddingPath(
+  const std::vector<int>& result) {
+  std::unique_ptr<path_t> path(new path_t());
+  const int kSequenceLength = result.size();
+  for (int i = 0; i < kSequenceLength - 1; ++i) {
+    auto p = ComputeShortestPath(result[i], result[i + 1]);
+    for (int j = 0; j < static_cast<int>(p->size()) - 1; ++j) {
+      path->push_back(edge_t(p->at(j), p->at(j + 1)));
+    }  
+  }
+  return std::move(path);
 }
 
 double GetSolutionStretch(const std::vector<int> &result) {

@@ -28,7 +28,8 @@ const std::string kUsage =
     "--per_core_cost=<per_core_cost>\n\t--per_bit_transit_cost=<per_bit_transit"
     "_cost>\n\t--topology_file=<topology_file>\n\t"
     "--middlebox_spec_file=<middlebox_spec_file>\n\t--traffic_r"
-    "equest_file=<traffic_request_file>\n\t--algorithm=<algorithm>";
+    "equest_file=<traffic_request_file>\n\t--algorithm=<algorithm>"
+    "\n\t--traffic_index=<traffic_index>\n\t--log_prefix=<log_prefix>";
 
 std::vector<middlebox> middleboxes;
 std::vector<traffic_request> traffic_requests;
@@ -52,6 +53,8 @@ int shortest_path[MAXN][MAXN], sp_pre[MAXN][MAXN];
 int shortest_edge_path[MAXN][MAXN];
 long bw[MAXN][MAXN];
 int max_time;
+int traffic_index;
+std::string log_prefix = "log.dc";
 std::map<std::pair<int, int>, std::unique_ptr<std::vector<int>>> path_cache;
 solution_statistics stats;
 std::vector<std::unique_ptr<std::vector<int>>> all_results;
@@ -84,6 +87,10 @@ int main(int argc, char *argv[]) {
       algorithm = argument.second;
     } else if (argument.first == "--max_time") {
       max_time = atoi(argument.second.c_str());
+    } else if (argument.first == "--traffic_index") {
+      traffic_index = atoi(argument.second.c_str());
+    }  else if (argument.first == "--log_prefix") {
+       log_prefix = argument.second;
     }
   }
   if (algorithm == "cplex") {
@@ -248,67 +255,103 @@ int main(int argc, char *argv[]) {
     fclose(util_log_file);
 
   } else if (algorithm == "viterbi") {
-    int current_time = traffic_requests[0].arrival_time;
-    unsigned long long elapsed_time = 0;
-    unsigned long long current_solution_time = 0;
-    stats.num_accepted = stats.num_rejected = 0;
-    const int kNumTrafficRequests = static_cast<int>(traffic_requests.size());
-    for (int i = 0; i < kNumTrafficRequests; ++i) {
+    // int current_time = traffic_requests[0].arrival_time;
+    // unsigned long long elapsed_time = 0;
+    // unsigned long long current_solution_time = 0;
+    // stats.num_accepted = stats.num_rejected = 0;
+    // const int kNumTrafficRequests = static_cast<int>(traffic_requests.size());
+    FILE* cost_file = fopen((log_prefix + ".cost").c_str(), "w");
+    FILE* emap_file = fopen((log_prefix + ".emap").c_str(), "w");
+    FILE* nmap_file = fopen((log_prefix + ".nmap").c_str(), "w");
+    FILE* seq_file = fopen((log_prefix + ".sequence").c_str(), "w");
+    // for (int i = traffic_index; i <= traffic_index; ++i) {
+    // for (int i = 0; i < kNumTrafficRequests; ++i) {
       // traffic_requests[i].duration = 6300; // 300;
-      if (current_time != traffic_requests[i].arrival_time) {
+      // if (current_time != traffic_requests[i].arrival_time) {
         // RefreshServerStats(current_time);
-        printf("Current time = %d, Solution time = %llu.%llu\n", current_time,
-               current_solution_time / ONE_GIG,
-               current_solution_time % ONE_GIG);
-        current_time = traffic_requests[i].arrival_time;
-        current_solution_time = 0;
-        ReleaseAllResources();
-      }
+        // printf("Current time = %d, Solution time = %llu.%llu\n", current_time,
+        //        current_solution_time / ONE_GIG,
+        //        current_solution_time % ONE_GIG);
+        // current_time = traffic_requests[i].arrival_time;
+        // current_solution_time = 0;
+        // ReleaseAllResources();
+      // }
 
       // Get solution for one traffic.
-      auto solution_start_time = std::chrono::high_resolution_clock::now();
-      std::unique_ptr<std::vector<int>> result =
-          ViterbiCompute(traffic_requests[i]);
-      auto solution_end_time = std::chrono::high_resolution_clock::now();
-      unsigned long long solution_time =
-          std::chrono::duration_cast<std::chrono::nanoseconds>(
-              solution_end_time - solution_start_time).count();
-      current_solution_time += solution_time;
-      elapsed_time += solution_time;
-      UpdateResources(result.get(), traffic_requests[i]);
-      RefreshServerStats(current_time);
+    auto solution_start_time = std::chrono::high_resolution_clock::now();
+    std::unique_ptr<std::vector<int>> result =
+        ViterbiCompute(traffic_requests[traffic_index]);
+    auto solution_end_time = std::chrono::high_resolution_clock::now();
+    unsigned long long solution_time =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            solution_end_time - solution_start_time).count();
+      // current_solution_time += solution_time;
+      // elapsed_time += solution_time;
+      // UpdateResources(result.get(), traffic_requests[i]);
+      // RefreshServerStats(current_time);
       // printf("i = %d, %s\n", i,
       // traffic_requests[i].GetDebugString().c_str());
       // Progress bar
-      if (i % 500 == 0) {
-        double percentage_completed = 100.0 * static_cast<double>(i) /
-                                      static_cast<double>(kNumTrafficRequests);
+      // if (i % 500 == 0) {
+      //   double percentage_completed = 100.0 * static_cast<double>(i) /
+      //                                 static_cast<double>(kNumTrafficRequests);
         // printf("%.2lf%% traffics completed\n", percentage_completed);
-      }
-      all_results.push_back(std::move(result));
-    }
+      // }
 
-    printf("Current time = %d, Solution time = %llu.%llu\n", current_time,
-           current_solution_time / ONE_GIG, current_solution_time % ONE_GIG);
+      // all_results.push_back(std::move(result));
+
+      // For comparison with Khaleesi compute cost.
+    const int kLastIndex = static_cast<int>(result->size()) - 1;
+    double cost = 0;
+    for (int kk = 1; kk < result->size(); ++kk) {
+      int current_node = result->at(kk), prev_node = result->at(kk - 1);
+      cost += static_cast<double>(
+               GetTransitCost(prev_node, current_node, traffic_requests[traffic_index]));
+    }
+    fprintf(nmap_file, "%d", traffic_index); 
+    fprintf(seq_file, "%d", traffic_index);
+    for (int kk = 1; kk < kLastIndex; ++kk) {
+      fprintf(nmap_file, ",%d", result->at(kk));
+      fprintf(seq_file, ",%d", kk - 1);
+    }
+    fprintf(nmap_file, "\n");
+    fprintf(seq_file, "\n");
+    fclose(nmap_file);
+    fclose(seq_file);
+    if (result->size() > 0) printf("%d\n", result->at(result->size() - 1));
+    if (result->size() <= 0) fprintf(cost_file, "%d,-1\n", traffic_index);
+    else fprintf(cost_file, "%d,%.0lf\n", traffic_index, cost);
+    fprintf(emap_file, "%d", traffic_index);
+    auto path = ComputeEmbeddingPath(*result.get());
+    for (int i = 0; i < path->size(); ++i) {
+      fprintf(emap_file, ",%d,%d", path->at(i).first, path->at(i).second);
+    }
+    fprintf(emap_file, "\n");
+    fclose(cost_file);
+    fclose(emap_file);
+    // }
+
+    // printf("Current time = %d, Solution time = %llu.%llu\n", current_time,
+    //        current_solution_time / ONE_GIG, current_solution_time % ONE_GIG);
     // Print the solution time.
-    printf("Solution time: %llu.%llus\n", elapsed_time / ONE_GIG,
-           elapsed_time % ONE_GIG);
-    printf("Acceptance Ratio: %.8lf%%\n",
-           100.0 * static_cast<double>(stats.num_accepted) /
-               static_cast<double>(stats.num_accepted + stats.num_rejected));
+    // printf("Solution time: %llu.%llus\n", elapsed_time / ONE_GIG,
+    //        elapsed_time % ONE_GIG);
+    // printf("Acceptance Ratio: %.8lf%%\n",
+    //        100.0 * static_cast<double>(stats.num_accepted) /
+    //            static_cast<double>(stats.num_accepted + stats.num_rejected));
 
     // DEBUG: Write all the computed sequences in a file.
-    FILE *all_results_file = fopen("log.sequences", "w");
-    int row_index = 0;
-    for (auto &row : all_results) {
-      for (int i = 0; i < row->size(); ++i) {
-        if (i != 0) fprintf(all_results_file, ",");
-        fprintf(all_results_file, "%d", row->at(i));
-      }
-      fprintf(all_results_file, "\n");
-      ++row_index;
-    }
-    fclose(all_results_file);
+    // FILE *all_results_file = fopen("log.sequences", "w");
+    // int row_index = 0;
+    // for (auto &row : all_results) {
+    //   for (int i = 0; i < row->size(); ++i) {
+    //     if (i != 0) fprintf(all_results_file, ",");
+    //     fprintf(all_results_file, "%d", row->at(i));
+    //   }
+    //   fprintf(all_results_file, "\n");
+    //   ++row_index;
+    // }
+    // fclose(all_results_file);
   }
   return 0;
 }

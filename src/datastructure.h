@@ -48,6 +48,12 @@ struct middlebox {
         processing_delay(atoi(mb_delay.c_str())),
         processing_capacity(atoi(mb_capacity.c_str())),
         deployment_cost(atof(mb_cost.c_str())) {}
+  middlebox(const std::string &mb_name, const std::string &mb_cpu)
+      : middlebox_name(mb_name),
+        cpu_requirement(atoi(mb_cpu.c_str())),
+        processing_delay(0),
+        processing_capacity(INF),
+        deployment_cost(0.0) {}
   std::string GetDebugString() {
     return "middlebox_name : " + middlebox_name + ", cpu_requirement : " +
            std::to_string(cpu_requirement) + ", processing_delay : " +
@@ -114,9 +120,11 @@ struct node {
   int node_id;
   int num_cores;
   int residual_cores;
+  int sw_cap;
+  int residual_sw_cap;
   std::string GetDebugString() {
     return "node_id : " + std::to_string(node_id) + ", num_cores : " +
-           std::to_string(num_cores);
+           std::to_string(num_cores) + ", sw_cap : " + std::to_string(sw_cap);
   }
 };
 
@@ -131,6 +139,7 @@ struct edge_endpoint {
 
 struct resource {
   std::vector<int> cpu_cores;
+  std::vector<int> sw_cap;
 };
 
 // Statistics for each traffic embedding.

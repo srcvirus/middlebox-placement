@@ -89,7 +89,9 @@ void InitializeMiddleboxes(const char *filename) {
   auto csv_vector = ReadCSVFile(filename);
   for (int i = 0; i < csv_vector->size(); ++i) {
     std::vector<std::string> &row = (*csv_vector)[i];
-    middleboxes.emplace_back(row[0], row[1], row[2], row[3], row[4]);
+    middleboxes.emplace_back(row[0], row[1]);
+    DEBUG("Mbox %s, CPU required %s\n", row[0].c_str(), row[1].c_str());
+    // middleboxes.emplace_back(row[0], row[1], row[2], row[3], row[4]);
   }
 }
 
@@ -114,22 +116,25 @@ void InitializeTrafficRequests(const char *filename) {
   for (int i = 0; i < csv_vector->size(); ++i) {
     std::vector<int> mbox_sequence;
     std::vector<std::string> &row = (*csv_vector)[i];
-    for (int mbox_seq_index = 6; mbox_seq_index < row.size();
-         ++mbox_seq_index) {
+    const int mbox_seq_index_start = 4;
+    for (int mbox_seq_index = mbox_seq_index_start; 
+         mbox_seq_index < row.size(); ++mbox_seq_index) {
       mbox_sequence.push_back(GetMiddleboxIndex(row[mbox_seq_index]));
     }
-    traffic_requests.emplace_back(row[0], row[1], row[2], row[3], row[4],
-                                  row[5], mbox_sequence);
+    traffic_requests.emplace_back("0", row[1], row[2], row[3], std::to_string(INF),
+                                  "0", mbox_sequence);
+    // traffic_requests.emplace_back(row[0], row[1], row[2], row[3], row[4],
+    //                               row[5], mbox_sequence);
   }
-  int last_time_stamp = max_time;
-  int current_time = traffic_requests.back().arrival_time;
+  // int last_time_stamp = max_time;
+  // int current_time = traffic_requests.back().arrival_time;
   for (int i = traffic_requests.size() - 1; i >= 0; --i) {
-    if (current_time != traffic_requests[i].arrival_time) {
-      last_time_stamp = current_time;
-      current_time = traffic_requests[i].arrival_time;
-    }
-    traffic_requests[i].duration =
-        (last_time_stamp - traffic_requests[i].arrival_time) * 60;
+    // if (current_time != traffic_requests[i].arrival_time) {
+    //   last_time_stamp = current_time;
+    //   current_time = traffic_requests[i].arrival_time;
+    // }
+    traffic_requests[i].duration = INF;
+    //     (last_time_stamp - traffic_requests[i].arrival_time) * 60;
   }
 }
 
@@ -137,14 +142,16 @@ void InitializeTopology(const char *filename) {
   DEBUG("[Parsing %s]\n", filename);
   FILE *file_ptr = fopen(filename, "r");
   int node_count, edge_count;
-  int ret_val = fscanf(file_ptr, "%d %d", &node_count, &edge_count);
+  int ret_val = fscanf(file_ptr, "%d,%d", &node_count, &edge_count);
   DEBUG(" node_count = %d, edge_count = %d\n", node_count, edge_count);
   graph.resize(node_count);
   nodes.resize(node_count);
   deployed_mboxes.resize(node_count);
   for (int i = 0; i < node_count; ++i) {
-    ret_val = fscanf(file_ptr, "%d %d", &nodes[i].node_id, &nodes[i].num_cores);
+    ret_val = fscanf(file_ptr, "%d,%d,%d", &nodes[i].node_id, 
+                     &nodes[i].num_cores, &nodes[i].sw_cap);
     nodes[i].residual_cores = nodes[i].num_cores;
+    nodes[i].residual_sw_cap = nodes[i].sw_cap;
     graph[i].clear();
     shortest_path[i][i] = 0.0;
     shortest_edge_path[i][i] = 0;
@@ -163,21 +170,21 @@ void InitializeTopology(const char *filename) {
   }
 
   for (int j = 0; j < edge_count; ++j) {
-    int source, destination, delay;
+    int link_id, source, destination;
     unsigned long bandwidth;
-    ret_val = fscanf(file_ptr, "%d %d %lu %d", &source, &destination, &bandwidth, &delay);
-    DEBUG(" Read edge: %d %d %lu %d\n", source, destination, bandwidth, delay);
+    // ret_val = fscanf(file_ptr, "%d %d %lu %d", &source, &destination, &bandwidth, &delay);
+    ret_val = fscanf(file_ptr, "%d,%d,%d,%lu", &link_id, &source, &destination, &bandwidth);
+    DEBUG(" Read edge: %d %d %d %lu\n", link_id, source, destination, bandwidth);
     DEBUG(" Adding edge, %d --> %s\n", source,
           nodes[destination].GetDebugString().c_str());
     DEBUG(" Adding edge, %d --> %s\n", destination,
           nodes[source].GetDebugString().c_str());
-    graph[source].emplace_back(&nodes[destination], bandwidth, delay);
-    graph[destination].emplace_back(&nodes[source], bandwidth, delay);
+    graph[source].emplace_back(&nodes[destination], bandwidth, 0);
+    graph[destination].emplace_back(&nodes[source], bandwidth, 0);
     bw[source][destination] = bw[destination][source] = bandwidth;
     shortest_edge_path[source][destination] = 1;
     shortest_edge_path[destination][source] = 1;
-    shortest_path[source][destination] = shortest_path[destination][source] =
-        delay;
+    shortest_path[source][destination] = shortest_path[destination][source] = 0;
     sp_pre[source][destination] = source;
     sp_pre[destination][source] = destination;
   }

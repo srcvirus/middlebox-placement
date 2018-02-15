@@ -27,6 +27,7 @@ std::unique_ptr<std::vector<int> > ViterbiCompute(
   for (int i = 0; i < kNumNodes; ++i) {
     for (int j = 0; j < kNumNodes; ++j) {
       current_vector[i].cpu_cores.push_back(nodes[j].residual_cores);
+      current_vector[i].sw_cap.push_back(nodes[j].residual_sw_cap);
     }
   }
   for (node = 0; node < kNumNodes; ++node) {
@@ -36,7 +37,8 @@ std::unique_ptr<std::vector<int> > ViterbiCompute(
       cost[stage][node] = GetCost(t_request.source, node, current_vector[node],
                                   m_box, t_request);
       current_vector[node].cpu_cores[node] -= m_box.cpu_requirement;
-      DEBUG("[First stage] cost[stage][node] = %lf\n", cost[stage][node]);
+      current_vector[node].sw_cap[node] -= t_request.min_bandwidth;
+      DEBUG("[First stage] cost[stage = 0][node = %d] = %lf\n", node, cost[stage][node]);
     }
   }
   for (stage = 1; stage < kNumStages; ++stage) {
@@ -69,21 +71,31 @@ std::unique_ptr<std::vector<int> > ViterbiCompute(
         DEBUG("Current node = %d, min_index = %d\n", current_node, min_index);
         current_vector[current_node].cpu_cores =
             previous_vector[min_index].cpu_cores;
+        current_vector[current_node].sw_cap =
+            previous_vector[min_index].sw_cap;
         bool new_middlebox_deployed = true;
-        for (middlebox_instance &mbox_instance :
-             deployed_mboxes[current_node]) {
-          if (mbox_instance.m_box->middlebox_name == m_box.middlebox_name &&
-              mbox_instance.residual_capacity >= t_request.min_bandwidth) {
-            new_middlebox_deployed = false;
-            break;
-          }
-        }
+
+        // For comparison with Khaleesi we are not reusing mboxes.
+        // for (middlebox_instance &mbox_instance :
+        //      deployed_mboxes[current_node]) {
+        //   if (mbox_instance.m_box->middlebox_name == m_box.middlebox_name &&
+        //       mbox_instance.residual_capacity >= t_request.min_bandwidth) {
+        //     new_middlebox_deployed = false;
+        //     break;
+        //   }
+        // }
+
         if (new_middlebox_deployed) {
           current_vector[current_node].cpu_cores[current_node] -=
               m_box.cpu_requirement;
+          if (current_node == min_index) {
+            current_vector[current_node].sw_cap[current_node] -=
+              t_request.min_bandwidth;
+          }
         }
       } else {
         current_vector[current_node].cpu_cores.clear();
+        current_vector[current_node].sw_cap.clear();
       }
     }
   }
